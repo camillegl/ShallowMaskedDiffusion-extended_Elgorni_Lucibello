@@ -15,6 +15,7 @@ uv.lock
 /logs/
 .DS_Store
 .ipynb_checkpoints
+experiments-analysis/results/*_checkpoint.csv
 /slurm-logs/
 /datasets/
 other_logs/
