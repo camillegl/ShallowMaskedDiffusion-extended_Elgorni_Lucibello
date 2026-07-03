@@ -58,21 +58,52 @@ fixed-masking-level **ablations**, not the primary objective.
 > plateau above the baseline indicates possible model/sampler/optimization/finite-size
 > limitations — **not** proof of an asymptotic capacity threshold.
 
-## What `FAST_DEBUG=True` proves and does not prove
+## Run modes
 
-`FAST_DEBUG=True, FINAL_RUN=False` (the committed defaults) runs a tiny CPU-friendly sweep
-(hundreds of MMD samples, ~100-300 training steps, 1 repeat). It proves the pipeline runs
+Three run modes, selected in the configuration cell. The committed defaults are
+`FAST_DEBUG=False, MACBOOK_30MIN_RUN=True, FINAL_RUN=False`. Every result row carries a
+`run_mode` column (`fast_debug` / `macbook_30min` / `full_single_repeat` / `full_final`)
+plus per-row timing columns (`train_time_sec`, `loss_eval_time_sec`, `sample_time_sec`,
+`mmd_time_sec`, `row_time_sec`), so results from different modes are never confusable and
+the laptop bottleneck is visible directly in the CSV.
+
+### What `FAST_DEBUG=True` proves and does not prove
+
+`FAST_DEBUG=True` runs a tiny CPU-friendly sweep (hundreds of MMD samples, ~100-300
+training steps, 1 repeat) and overrides `MACBOOK_30MIN_RUN`. It proves the pipeline runs
 end-to-end without exceptions, the estimator sanity checks pass (biased self-MMD ≈ 0,
 independent true-vs-true MMD finite, exact-$K$ mask/loss-scale checks pass), and the plots and
 result tables are produced correctly. It does **not** prove anything about the scientific
 question above — sample counts and training budgets are far too small for quantitative claims.
 
-## What a full run requires
+### Local MacBook preview mode
 
-Set `FAST_DEBUG=False` (10k MMD samples, up to 3000 training steps scaled by $N$) and, for
-final figures, `FINAL_RUN=True` (3 repeats over feature matrices/datasets/initialization/
-sampling noise, so mean ± SEM curves are meaningful). A full run is substantially more
-expensive and should use a GPU if available (`train_device`/`mmd_device` auto-detect CUDA).
+`MACBOOK_30MIN_RUN=True` (the committed default) is a reduced local preview mode intended
+for Apple Silicon laptops. It uses Experiment A only ($D=80$, $\gamma=2$, the full
+$\alpha \in \{0.5, 1, 2, 5, 10, 20, 50, 100\}$ grid), one repeat, one sampler value
+($k=1$), 1500 MMD samples instead of 10000, a smaller capped training budget (≤1000 steps
+per model), and disables the gamma/dimension sweeps and the correlation diagnostic. It is
+designed to check the pipeline and obtain a rough qualitative alpha-sweep in laptop-scale
+time — measured ~2 minutes end-to-end on an M3 MacBook Air (8 GB), far under the 30-minute
+budget it was sized for. **It is not the final
+quantitative baseline**: 1500 MMD samples raise the finite-sample noise floor, and one
+repeat means no error bars.
+
+Device selection is CUDA > MPS > CPU via `get_preferred_device`, controlled by
+`PREFER_MPS_FOR_TRAINING` and `USE_MPS_FOR_MMD`. Both default to **False**: benchmarked on
+an M3 MacBook Air (torch 2.12), the linear backbones here are so small that MPS
+dispatch/sync overhead makes training ~65× and $k=1$ sequential sampling ~50× *slower* on
+MPS than on CPU, and the chunked MMD kernel sums (which sync per chunk) are ~10× slower.
+Enable the flags only if timing on your machine shows MPS is faster (e.g. for much larger
+backbones). CUDA, when available, is always used automatically.
+
+### What a full run requires
+
+Set `FAST_DEBUG=False, MACBOOK_30MIN_RUN=False` (10k MMD samples, up to 3000 training steps
+scaled by $N$) and, for final figures, `FINAL_RUN=True` (3 repeats over feature
+matrices/datasets/initialization/sampling noise, so mean ± SEM curves are meaningful). A
+full run is substantially more expensive and should run on a GPU/cluster machine
+(`train_device`/`mmd_device` auto-detect CUDA); it is not intended for a MacBook Air.
 
 ## Reproducing figures
 
@@ -86,8 +117,8 @@ uv run jupyter nbconvert --to notebook --execute --inplace \
 
 This writes `results/results_mmd_distribution_distance_corrected.csv`,
 `results/results_mmd_time_sliced.csv`, and PNGs under `figures/`. Checkpoint CSVs
-(`results/results_mmd_distribution_distance_{debug,full}_checkpoint.csv`) are resume artifacts
-and are not committed.
+(`results/results_mmd_distribution_distance_{debug,macbook,full}_checkpoint.csv`) are resume
+artifacts and are not committed.
 
 ## Limitations
 
