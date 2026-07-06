@@ -58,10 +58,27 @@ fixed-masking-level **ablations**, not the primary objective.
 > plateau above the baseline indicates possible model/sampler/optimization/finite-size
 > limitations — **not** proof of an asymptotic capacity threshold.
 
+## Current committed results
+
+The notebook is currently committed with **`FINAL_RUN=True`** and its outputs baked in
+(figures, tables, and the execution-status cell are all visible without re-running
+anything). This is the full baseline sweep: Experiments A+B+C
+($D\in\{40,80,160\}$, $\gamma\in\{1,2,4\}$, $\alpha\in\{0.5,\dots,100\}$, 34 unique
+configs), 3 repeats, 10 000 MMD samples per comparison — 102 result rows and 510
+time-sliced diagnostic rows, `run_mode=full_final` throughout. On Experiment A
+($D=80,\gamma=2$), Model-vs-True MMD decreases from 0.042 at $\alpha=0.5$ to 0.013 at
+$\alpha=100$, closing in on the 0.012 True-vs-True noise floor. This full run took ~72
+minutes on an M3 MacBook Air CPU (not the 30-minute preview budget below); the checkpoint
+in `results/results_mmd_distribution_distance_full_checkpoint.csv` makes it resumable.
+
+To reproduce quickly for local iteration instead, flip the flags in the configuration
+cell to the preview mode described next (`MACBOOK_30MIN_RUN=True`, `FINAL_RUN=False`) —
+that finishes in about a minute but is explicitly **not** the quantitative baseline shown
+above.
+
 ## Run modes
 
-Three run modes, selected in the configuration cell. The committed defaults are
-`FAST_DEBUG=False, MACBOOK_30MIN_RUN=True, FINAL_RUN=False`. Every result row carries a
+Three run modes, selected in the configuration cell. Every result row carries a
 `run_mode` column (`fast_debug` / `macbook_30min` / `full_single_repeat` / `full_final`)
 plus per-row timing columns (`train_time_sec`, `loss_eval_time_sec`, `sample_time_sec`,
 `mmd_time_sec`, `row_time_sec`), so results from different modes are never confusable and
@@ -78,8 +95,8 @@ question above — sample counts and training budgets are far too small for quan
 
 ### Local MacBook preview mode
 
-`MACBOOK_30MIN_RUN=True` (the committed default) is a reduced local preview mode intended
-for Apple Silicon laptops. It uses Experiment A only ($D=80$, $\gamma=2$, the full
+`MACBOOK_30MIN_RUN=True` is a reduced local preview mode intended for Apple Silicon
+laptops (not the currently-committed configuration — see above). It uses Experiment A only ($D=80$, $\gamma=2$, the full
 $\alpha \in \{0.5, 1, 2, 5, 10, 20, 50, 100\}$ grid), one repeat, one sampler value
 ($k=1$), 1500 MMD samples instead of 10000, a smaller capped training budget (≤1000 steps
 per model), and disables the gamma/dimension sweeps and the correlation diagnostic. It is
@@ -107,8 +124,10 @@ full run is substantially more expensive and should run on a GPU/cluster machine
 
 ## Reproducing figures
 
-Notebook cell outputs are stripped before commit to keep diffs reviewable. To regenerate
-figures/results locally:
+The committed notebook currently has its outputs baked in (see "Current committed
+results" above), rather than stripped, so the results are visible without re-running
+anything. To regenerate figures/results locally — e.g. after changing a run-mode flag —
+run:
 
 ```bash
 uv run jupyter nbconvert --to notebook --execute --inplace \
@@ -118,7 +137,9 @@ uv run jupyter nbconvert --to notebook --execute --inplace \
 This writes `results/results_mmd_distribution_distance_corrected.csv`,
 `results/results_mmd_time_sliced.csv`, and PNGs under `figures/`. Checkpoint CSVs
 (`results/results_mmd_distribution_distance_{debug,macbook,full}_checkpoint.csv`) are resume
-artifacts and are not committed.
+artifacts and are not committed. Note: the time-sliced diagnostic is *not* itself
+checkpointed — if the main sweep fully resumes from a cached checkpoint, no new
+time-sliced rows are generated that run, and the existing CSV on disk is kept as-is.
 
 ## Limitations
 
