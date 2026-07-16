@@ -194,10 +194,20 @@ class MaskedDiffusion(pl.LightningModule):
     
     def _sample_k_update(self, xt, k):
         batch_size, L = xt.shape
-            
+
         p_x0 = torch.sigmoid(self.forward(xt)) # [batch_size, L]
 
         mask = (xt == self.mask_index)          # [batch_size, L]
+
+        if k == 1:
+            # Vectorized fast path: one uniformly-chosen masked position per row.
+            rows = mask.any(dim=1)
+            if rows.any():
+                pos = torch.multinomial(mask[rows].to(p_x0.dtype), 1).squeeze(1)  # [n_rows]
+                q_s = p_x0[rows, pos]
+                xt[rows.nonzero(as_tuple=True)[0], pos] = 2*torch.bernoulli(q_s) - 1
+            return xt
+
         pos_to_unmask = []                     # list of posidx of length batch_size
         for b in range(batch_size):
             idx = torch.nonzero(mask[b], as_tuple=False).squeeze(1)  # masked positions in this row
