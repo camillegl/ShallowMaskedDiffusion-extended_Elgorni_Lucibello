@@ -78,13 +78,18 @@ the test suite: `uv run pytest -q`.
   implementation's exact behavior.
 - `docs/` — authoritative scientific and engineering documents
   (`RESEARCH_SPEC.md`, `NOTATION.md`, `ORIGINAL_ARCHITECTURE.md`, ADRs,
-  migration and provenance records).
-- `diffusion.py`, `models.py`, `datasets.py`, `train.py` — **legacy** flat
-  modules, kept because the protected notebooks import them; superseded by
-  the package (see `docs/MIGRATION_REPORT.md`).
+  migration and provenance records; see also `docs/FROZEN_LEGACY_RUNTIME.md`,
+  `docs/LEGACY_SCIENTIFIC_INDEX.md`, and `docs/FINAL_REPOSITORY_MAP.md` for
+  the legacy-retirement plan).
+- `diffusion.py`, `models.py`, `datasets.py` — **frozen legacy** flat modules,
+  kept only because the protected notebook imports them; `train.py` is a
+  separate, non-protected legacy CLI. Both are superseded by the package
+  (see `docs/MIGRATION_REPORT.md`, `docs/FROZEN_LEGACY_RUNTIME.md`).
 - `experiments-analysis/` — analysis notebooks and recorded results.
-- `notes/`, `paper/`, `src-hopfield/`, `julia-code/` — theory notes and side
-  studies.
+- `notes/`, `src-hopfield/`, `julia-code/` — theory notes and side studies.
+  The upstream and hidden-manifold theory live in `notes/notes_memorization.typ`
+  and `notes/notes_hiddenmanifold.typ` respectively; there is no separate
+  manuscript directory (see `docs/LEGACY_SCIENTIFIC_INDEX.md`).
 
 ## Reference results (protected)
 
@@ -112,6 +117,7 @@ symmetry (docs/UPSTREAM_DISCREPANCIES.md, D7).
 ## Citation
 
 Original study: Filippo Elgorni & Carlo Lucibello, *Shallow Masked Diffusion*
-(notes in `notes/notes_memorization.typ`; manuscript in preparation at
-`paper/main-neuralnetworks.typ`). Hidden-manifold extension: this repository
+(theory notes in `notes/notes_memorization.typ`; no manuscript directory
+exists in this repository at present). Hidden-manifold extension: this
+repository, theory in `notes/notes_hiddenmanifold.typ`
 (`https://github.com/camillegl/ShallowMaskedDiffusion-extended_Elgorni_Lucibello`).

@@ -45,7 +45,7 @@
       "sha256": "fae6cc34080235aac058a8ae1dc52f1eeee0767db8a86cf39b1aa3165da0898f",
       "size_bytes": 16160,
       "role": "frozen legacy module imported by the corrected notebook (hash reflects the sanctioned Phase-2 removal of an unused turtle import)",
-      "git_status": "tracked, modified in working tree (uncommitted)"
+      "git_status": "tracked; modified but uncommitted when this manifest was first recorded; subsequently committed in Phase 2 at 98b5afb5a6a2c649ad53c49077a177c8c48a399f"
     },
     {
       "path": "models.py",

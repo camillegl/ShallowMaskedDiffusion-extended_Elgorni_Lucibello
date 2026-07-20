@@ -2,9 +2,10 @@
 
 Canonical description of the upstream model, reconstructed from source at commit `2e2db70`.
 "Notes" references are to `notes/notes_memorization.typ`, which holds the authoritative
-upstream equations (`paper/main-neuralnetworks.typ` is a stub — see `docs/PROVENANCE.md`).
-Where the notes and code disagree, both are stated; discrepancies are catalogued in
-`docs/UPSTREAM_DISCREPANCIES.md`.
+upstream equations. At the Phase 2 baseline, `paper/main-neuralnetworks.typ` was a
+non-authoritative stub (see `docs/PROVENANCE.md`); it was removed in Phase 3A and remains
+recoverable from the stable tag `phase2-hidden-manifold-foundation`. Where the notes and code
+disagree, both are stated; discrepancies are catalogued in `docs/UPSTREAM_DISCREPANCIES.md`.
 
 ## Data model
 

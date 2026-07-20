@@ -66,13 +66,27 @@ yet extracted)
   `analysis_loss_convergence.ipynb`,
   `analysis_mmd_distribution_distance.ipynb`) — historical evidence with
   embedded outputs.
-- `scripts/train-*.sh`, `span-slurm.sh`, `uturn.sh` — tied to the legacy CLI;
-  delete together with `train.py` when historical reproduction is no longer
-  needed.
 - MNIST support (`BinarizedMNIST` in `datasets.py`, `torchvision`,
   `tensorboard`, `lightning`, `numba`, `tqdm`, `pandas`, `scipy`,
   `matplotlib`, `jupyterlab` deps) — removable only when the legacy modules
   and old notebooks retire.
+
+## Phase 3A (2026-07-21, uncommitted)
+
+- Deleted: `scripts/train-cpu.sh`, `scripts/train-gpu.sh`,
+  `scripts/train-cpu-mnist.sh`, `scripts/span-slurm.sh`, `scripts/uturn.sh`
+  (the legacy cluster/local run scripts deferred above — `train.py` itself
+  was **not** deleted, so this closes only the scripts half of that deferred
+  candidate), `paper/main-neuralnetworks.typ` (manuscript stub, no
+  equations), and `notes/notes_generalization_TODO.typ`.
+- The upstream and hidden-manifold theory remain exactly where they were:
+  `notes/notes_memorization.typ` (upstream) and `notes/notes_hiddenmanifold.typ`
+  (hidden-manifold extension); neither was touched.
+- New retirement documents: `docs/FROZEN_LEGACY_RUNTIME.md`,
+  `docs/LEGACY_SCIENTIFIC_INDEX.md`, `docs/FINAL_REPOSITORY_MAP.md`.
+- This phase performed no Hopfield, DMFT, Julia, notebook, or dependency
+  retirement, and no scientific code or notation change.
+- Status: **uncommitted** at the time of this edit.
 
 ## Dependencies removed
 

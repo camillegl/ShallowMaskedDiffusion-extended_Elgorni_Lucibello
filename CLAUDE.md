@@ -46,19 +46,26 @@ Python-3.11 claim is wrong); where it conflicts with `docs/`, `docs/` wins.
 - Package manager: `uv` only. Python 3.12 (`.python-version`); `uv.lock` is un-gitignored
   and must stay in version control.
 - Active implementation: `src/maskeddiffusion/` (typed dataclasses + TOML config, direct
-  PyTorch loop — see `docs/adr/`). Legacy flat modules (`train.py`, `diffusion.py`,
-  `models.py`, `datasets.py`) are superseded and frozen; the protected MMD notebooks
-  import them, so they must stay importable (`docs/REFERENCE_RESULTS_MANIFEST.md`).
+  PyTorch loop — see `docs/adr/`). Legacy flat modules `diffusion.py`, `models.py`, and
+  `datasets.py` are frozen compatibility modules required by the protected corrected MMD
+  notebook (`docs/REFERENCE_RESULTS_MANIFEST.md`, `docs/FROZEN_LEGACY_RUNTIME.md`) and must
+  stay importable. `train.py` is a separate, deprecated historical CLI: it is **not**
+  hash-pinned and is **not** a protected-notebook dependency; it is scheduled for later
+  retirement once the old cluster scripts and superseded notebooks are removed (see
+  `docs/LEGACY_SCIENTIFIC_INDEX.md`).
 - Protected artifacts (never modify/rerun/strip):
   `experiments-analysis/analysis_mmd_distribution_distance_corrected.ipynb`,
   `experiments-analysis/mmd_results_presentation_1.ipynb`, and the result CSVs pinned in
   `artifacts/reference/mmd_final_run/manifest.json`.
-- Theory notes in `notes/` (Typst) — `notes/notes_memorization.typ` holds the upstream
-  equations; `paper/main-neuralnetworks.typ` is a stub. Rules in `.claude/rules/` apply.
+- Theory notes in `notes/` (Typst) — `notes/notes_memorization.typ` is the authoritative
+  upstream theory; `notes/notes_hiddenmanifold.typ` is the authoritative hidden-manifold
+  extension theory. `paper/main-neuralnetworks.typ` was a non-authoritative stub, removed in
+  Phase 3A; it remains recoverable from the stable tag `phase2-hidden-manifold-foundation`
+  (see `docs/LEGACY_SCIENTIFIC_INDEX.md`). Rules in `.claude/rules/` apply.
 
 ## Verified commands (ran 2026-07-20, Phase 2)
 
-- `uv run pytest -q` — full test suite (112 tests).
+- `uv run pytest -q` — full test suite (125 tests).
 - `scripts/reproduce_smoke.sh` — tiny CPU end-to-end run; integration check only.
 - `scripts/validate_reference_artifacts.sh` — verify protected-artifact hashes.
 - `uv run maskeddiffusion-train --help` (likewise `-sample`, `-evaluate`,

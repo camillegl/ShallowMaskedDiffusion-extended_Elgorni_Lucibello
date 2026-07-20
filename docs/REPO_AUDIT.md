@@ -23,10 +23,10 @@ in this audit**.
 | `notes/notes_hiddenmanifold.typ` | Hidden-manifold entropy theory (replica) | A (extension theory) | Core | Overloads `α` as Rényi order (see NOTATION) | keep | Computes entropy of P_F; no MMD prediction |
 | `notes/notes_hopfield.typ`, `src-hopfield/` | Clamped-Hopfield side-track (RS theory + MCMC) | A (side-track) | Medium | — | keep | Self-contained |
 | `notes/*.pdf`, `paper/plots/`, `notes/plots/` | Compiled/generated figures | N | Evidence | — | keep | Non-ASCII filenames (λ) are a cross-platform hazard |
-| `paper/main-neuralnetworks.typ` | Manuscript stub (no equations) | N (stub) | Low today | — | keep; to be written | Not a source of equations |
+| `paper/main-neuralnetworks.typ` | Manuscript stub (no equations) | **deleted in Phase 3A (2026-07-21, uncommitted)** | Low today | — | deleted | Was not a source of equations; upstream/extension theory remain in `notes/notes_memorization.typ` / `notes/notes_hiddenmanifold.typ`. See `docs/LEGACY_SCIENTIFIC_INDEX.md`, `docs/FINAL_REPOSITORY_MAP.md` |
 | `data/*.npz` | Cached Hopfield theory/MCMC results | N (generated, used as input) | Medium | — | keep; add manifests later | Provenance is filename-encoded only |
 | `julia-code/` | Reference Julia implementations (incl. hiddenmanifold) | N (reference) | Medium | Parallel implementation of sign-channel data | keep | Not traced in this audit |
-| `scripts/*.sh` | SLURM + local run scripts | A (ops) | Low | — | keep | `uturn.sh` is non-SLURM; README points to nonexistent `slurm-jobs/` |
+| `scripts/*.sh` | SLURM + local run scripts | A (ops) | Low | — | `train-cpu.sh`, `train-gpu.sh`, `train-cpu-mnist.sh`, `span-slurm.sh`, `uturn.sh` **deleted in Phase 3A (2026-07-21, uncommitted)**; `reproduce_smoke.sh` and `validate_reference_artifacts.sh` kept | README points to nonexistent `slurm-jobs/` |
 | `pyproject.toml` | Dependency spec | A (deps) | — | `hydra-core` declared but never imported | drop hydra later | Placeholder description; no build-system → project not installable |
 | `uv.lock` | Lockfile (546 KB, on disk) | N — **gitignored**, so collaborators don't get it | — | — | decide: commit it (recommended) | Reproducibility gap |
 | `AGENTS.md` | Legacy agent instructions | N (superseded by `CLAUDE.md` + `docs/`) | — | Overlaps CLAUDE.md | rewrite/trim later | Stale: claims Python 3.11 and a `.python-version` file; neither is true (pyproject requires ≥3.12; no such file) |

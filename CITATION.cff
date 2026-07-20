@@ -13,4 +13,4 @@ abstract: >-
   Shallow (linear) masked diffusion models studied as associative memories,
   extended to a random-features hidden-manifold teacher. Includes a tested
   Python package (maskeddiffusion) and preserved reference MMD results.
-notes: "Manuscript in preparation (paper/main-neuralnetworks.typ); no license file is present in this repository — contact the authors before reuse."
+notes: "Authoritative derivations are retained in notes/notes_memorization.typ and notes/notes_hiddenmanifold.typ; no license file is present in this repository — contact the authors before reuse."
