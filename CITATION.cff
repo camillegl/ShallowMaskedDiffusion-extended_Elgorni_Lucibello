@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "ShallowMaskedDiffusion (hidden-manifold extension)"
+authors:
+  - family-names: Elgorni
+    given-names: Filippo
+    affiliation: Bocconi University
+  - family-names: Lucibello
+    given-names: Carlo
+    affiliation: Bocconi University
+repository-code: "https://github.com/camillegl/ShallowMaskedDiffusion-extended_Elgorni_Lucibello"
+abstract: >-
+  Shallow (linear) masked diffusion models studied as associative memories,
+  extended to a random-features hidden-manifold teacher. Includes a tested
+  Python package (maskeddiffusion) and preserved reference MMD results.
+notes: "Manuscript in preparation (paper/main-neuralnetworks.typ); no license file is present in this repository — contact the authors before reuse."

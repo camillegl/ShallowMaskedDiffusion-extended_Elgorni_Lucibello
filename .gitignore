@@ -10,8 +10,6 @@ wheels/
 # Virtual environments
 .venv
 /Manifest.toml
-uv.lock
-.python-version
 /logs/
 .DS_Store
 .ipynb_checkpoints
@@ -19,4 +17,11 @@ experiments-analysis/results/*_checkpoint.csv
 /slurm-logs/
 /datasets/
 other_logs/
-.claude/
+# Claude Code: track project agents/rules/skills, ignore local state
+.claude/*
+!.claude/agents/
+!.claude/rules/
+!.claude/skills/
+# transient run outputs (reference manifests stay tracked)
+artifacts/smoke-run*/
+runs/
