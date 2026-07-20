@@ -1,44 +1,117 @@
-# Shallow Masked Diffusion
+# ShallowMaskedDiffusion — hidden-manifold extension
 
-This repository contains code for training and evaluating shallow masked diffusion models, as described in the `notes/` directory. 
+Shallow (linear) masked diffusion models as associative memories: how do they
+memorize vs. generalize when trained on data from a hidden low-dimensional
+manifold? Original study by Filippo Elgorni and Carlo Lucibello (Bocconi
+University); this repository extends it to a random-features "hidden
+manifold" teacher.
 
+## Scientific setup
 
-## Setup Python Environment
+Teacher (quenched per repeat):
 
-Install the [uv](https://docs.astral.sh/uv/) python package and environment manager:
+- `F ∈ R^{N×D}`, entries `F_ia ~ N(0, 1/D)`, sampled once and held fixed;
+- samples `x = sign(F z)` with `z ~ N(0, I_D)` fresh per example, and the
+  convention `sign(0) := +1`, so `x ∈ {−1,+1}^N`.
+
+Dimensions and ratios (see `docs/NOTATION.md` — bare `alpha` is banned in
+active code because it historically meant different things):
+
+| name | symbol | meaning |
+|---|---|---|
+| `latent_dim` | D | latent dimension |
+| `visible_dim` | N | data dimension (`round(aspect_ratio·D)`) |
+| `train_size` | M | training samples (`round(sample_ratio·D)`) |
+| `aspect_ratio` | γ = N/D | teacher geometry |
+| `sample_ratio` | α = M/D | training load |
+| `visible_load` | M/N | derived metadata only |
+
+A linear masked score is trained with a masked-BCE objective; generated
+samples follow a **sampler-indexed terminal law** `P_{θ,A,k}` (the trained
+single-site conditionals are not known to form a coherent joint law, and no
+sampler here is ancestral sampling). Distributional agreement is measured by
+MMD against fresh samples from the same fixed F — an MMD decrease supports
+"approaches the finite-F target under this diagnostic," nothing stronger.
+Full contract: `docs/RESEARCH_SPEC.md`.
+
+## Installation
+
+Requires [uv](https://docs.astral.sh/uv/) and Python 3.12 (pinned in
+`.python-version`; dependency resolution pinned in `uv.lock`):
+
 ```
-curl -LsSf https://astral.sh/uv/install.sh | sh
+uv sync
 ```
 
-## Code Usage
+## Usage
 
-### Training
+Smoke check (tiny CPU run, integration only — never interpret scientifically):
+
 ```
-uv run python train.py --L 1024 --alpha 0.1 --l2reg 0.0 --dataset uniform --model linear
+scripts/reproduce_smoke.sh
 ```
 
-To train on a slurm cluster, use the scripts in the `slurm-jobs/` directory.
+Train / sample / evaluate / validate (all take `--config <toml> --output
+<dir> --device cpu|cuda|mps|auto --dry-run`):
 
-### Analysis
+```
+uv run maskeddiffusion-train    --config configs/smoke/smoke.toml --output runs/demo
+uv run maskeddiffusion-sample   --config configs/smoke/smoke.toml --output runs/demo-samples \
+       --checkpoint runs/demo/checkpoints/final.pt --n-samples 100
+uv run maskeddiffusion-evaluate --config configs/smoke/smoke.toml --output runs/demo-eval \
+       --checkpoint runs/demo/checkpoints/final.pt --teacher runs/demo/teacher.pt \
+       --samples runs/demo-samples/samples/samples.pt
+uv run maskeddiffusion-validate-artifact runs/demo
+```
 
-For analyzing results and produce plots, run the Jupyter notebook `analysis.ipynb`.
+Every run writes a self-describing artifact directory (`manifest.json`,
+`resolved_config.json`, `metrics.jsonl`, `summary.json`; ADR 003). Verify the
+protected reference results: `scripts/validate_reference_artifacts.sh`. Run
+the test suite: `uv run pytest -q`.
 
+## Repository structure
 
+- `src/maskeddiffusion/` — the active implementation (teacher, masking,
+  linear score, objectives, samplers, training, metrics, CLI).
+- `tests/` — unit/property/integration/regression tests, including
+  `tests/fixtures/original_architecture_v1/` which pins the legacy
+  implementation's exact behavior.
+- `docs/` — authoritative scientific and engineering documents
+  (`RESEARCH_SPEC.md`, `NOTATION.md`, `ORIGINAL_ARCHITECTURE.md`, ADRs,
+  migration and provenance records).
+- `diffusion.py`, `models.py`, `datasets.py`, `train.py` — **legacy** flat
+  modules, kept because the protected notebooks import them; superseded by
+  the package (see `docs/MIGRATION_REPORT.md`).
+- `experiments-analysis/` — analysis notebooks and recorded results.
+- `notes/`, `paper/`, `src-hopfield/`, `julia-code/` — theory notes and side
+  studies.
 
+## Reference results (protected)
 
-## Code Organization
+Two notebooks are preserved verbatim as the record of the final MMD run
+(hashes in `docs/REFERENCE_RESULTS_MANIFEST.md`, enforced by tests):
 
-TODO
+- `experiments-analysis/analysis_mmd_distribution_distance_corrected.ipynb` —
+  the authoritative final-run record (100k-sample MMD, λ∈{4,8}).
+- `experiments-analysis/mmd_results_presentation_1.ipynb` — a historical
+  presentation artifact; **presentation-only, not a source of truth**.
 
-## Notes
+The reference results were produced by the legacy implementation via those
+notebooks. The new package has **not** rerun the 100k final experiment; its
+MMD implementation is verified equivalent to the notebook's on small inputs
+(`tests/regression/test_mmd_notebook_equivalence.py`), no more.
 
-Notes are written in [Typst](https://typst.app/) and are located in the `notes/` directory. 
+## Claim limitations
 
-You can edit the notes locally using the VSCode extension `Tinymist Typst`. You can also install the
-`Typst Math` extension for a Lyx-like math editing experience.
+Finite-dimensional empirical evidence only. No capacity threshold or
+asymptotic statement is established; the observed persistent Model-vs-True
+MMD gap above the noise floor is an open question. `V ≡ 0` (frozen mask
+channel) in recorded experiments is a modeling restriction, not a derived
+symmetry (docs/UPSTREAM_DISCREPANCIES.md, D7).
 
-The notes are also synced with a typst web app project that you can edit at this link https://typst.app/project/w62GPZe8S65lWDqfCZvKxW.
+## Citation
 
-## Plots 
-
-Some plots are saved in `notes/plots`.
+Original study: Filippo Elgorni & Carlo Lucibello, *Shallow Masked Diffusion*
+(notes in `notes/notes_memorization.typ`; manuscript in preparation at
+`paper/main-neuralnetworks.typ`). Hidden-manifold extension: this repository
+(`https://github.com/camillegl/ShallowMaskedDiffusion-extended_Elgorni_Lucibello`).

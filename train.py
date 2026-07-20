@@ -151,10 +151,10 @@ if __name__ == "__main__":
                                                            'binarized_mnist'")
     parser.add_argument("--model", type=str, default="linear", help="Model type. Choices: \
                                                             'linear', \
-                                                            'rfs<expansion>-<activation>' (random feature score) e.g. 'rfs10-tanh', \
+                                                            'rfs<expansion>_<activation>' (random feature score) e.g. 'rfs10_tanh', \
                                                             'tensor<nbins>' (linear on time slices) e.g. 'tensor4'.")
     parser.add_argument("--L", type=int, default=128, help="Dimensionality of the data.")
-    parser.add_argument("--alpha", type=float, default=0.1, help="Ratio of number of training samples to L.")
+    parser.add_argument("--alpha", type=float, default=0.1, help="LEGACY convention: ratio of number of training samples to L (M/N = visible_load). NOT the hidden-manifold sample_ratio M/D; see docs/NOTATION.md. This legacy CLI is superseded by maskeddiffusion-train.")
     parser.add_argument("--alpha-val", type=float, default=0.1, help="Ratio of number of validation samples to L.")
     parser.add_argument("--epochs", type=int, default=100, help="Number of training epochs.")
     parser.add_argument("--batch-size", type=int, default=512, help="Batch size.")
