@@ -1,0 +1,32 @@
+# Tiny CPU smoke configuration — integration check only, not scientifically
+# interpretable (docs/RESEARCH_SPEC.md).
+
+n_generate = 8
+
+[dimensions]
+latent_dim = 8
+aspect_ratio = 4.0    # visible_dim = 32
+sample_ratio = 6.0    # train_size = 48
+
+[seeds]
+base_seed = 12345
+
+[model]
+normalization = "explicit_sqrt_n"
+v_policy = "frozen_zero"
+bias_policy = "none"
+diagonal_policy = "zero"
+
+[training]
+max_steps = 60
+batch_size = 16
+learning_rate = 1e-2
+l2reg = 0.01
+validation_size = 16
+validation_every = 20
+log_every = 10
+checkpoint_every = 30
+
+[sampler]
+sampler_name = "sequential_random_stochastic"
+tokens_per_step = 1
