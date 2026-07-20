@@ -1,0 +1,120 @@
+{
+  "format": "original_architecture_fixtures.v1",
+  "fixtures": [
+    {
+      "fixture": "linear_model",
+      "source_commit": "fea744d41b4c960c8dbfe8df7f6da82f297ba8b7",
+      "environment": {
+        "python": "3.12.13",
+        "torch": "2.12.0",
+        "platform": "macOS-26.5.2-arm64-arm-64bit"
+      },
+      "source_module": "models.py",
+      "source_symbol": "LinearBackbone.forward",
+      "dimensions": {
+        "L": 8,
+        "batch": 3
+      },
+      "seed": 101,
+      "tolerance": 1e-06,
+      "discrepancies": [
+        "D3 (no runtime 1/sqrt(L))",
+        "D4 (in-band mask token 0)"
+      ],
+      "preserves": "legacy quirk: normalization only in init, in-band mask encoding",
+      "normalization": "none at runtime; W init scale 1/sqrt(L) overwritten by fixed W here"
+    },
+    {
+      "fixture": "masking",
+      "source_commit": "fea744d41b4c960c8dbfe8df7f6da82f297ba8b7",
+      "environment": {
+        "python": "3.12.13",
+        "torch": "2.12.0",
+        "platform": "macOS-26.5.2-arm64-arm-64bit"
+      },
+      "source_module": "diffusion.py",
+      "source_symbol": "MaskedDiffusion._compute_loss (masking block, lines 71-81)",
+      "dimensions": {
+        "L": 8,
+        "batch": 4
+      },
+      "seed": 202,
+      "tolerance": 0.0,
+      "discrepancies": [
+        "D4"
+      ],
+      "preserves": "intended behavior (Bernoulli(t) masks)",
+      "randomness": "explicit uniforms stored; mask = uniforms < t"
+    },
+    {
+      "fixture": "objective",
+      "source_commit": "fea744d41b4c960c8dbfe8df7f6da82f297ba8b7",
+      "environment": {
+        "python": "3.12.13",
+        "torch": "2.12.0",
+        "platform": "macOS-26.5.2-arm64-arm-64bit"
+      },
+      "source_module": "diffusion.py",
+      "source_symbol": "MaskedDiffusion._compute_loss + sqnorm + l2coeff",
+      "dimensions": {
+        "L": 8,
+        "batch": 4
+      },
+      "seed": 303,
+      "tolerance": 1e-06,
+      "parameters": {
+        "l2reg": 0.1,
+        "alpha_legacy_M_over_N": 0.5
+      },
+      "discrepancies": [
+        "D1 (alpha=M/N)",
+        "D5 (1/(L*B) normalization)",
+        "D6 (all-params sqnorm)"
+      ],
+      "preserves": "legacy behavior incl. D6 quirk (V penalized; frozen params would be too)",
+      "weighting": "1/t per masked position; t shared across positions per row"
+    },
+    {
+      "fixture": "sampler_stochastic",
+      "source_commit": "fea744d41b4c960c8dbfe8df7f6da82f297ba8b7",
+      "environment": {
+        "python": "3.12.13",
+        "torch": "2.12.0",
+        "platform": "macOS-26.5.2-arm64-arm-64bit"
+      },
+      "source_module": "diffusion.py",
+      "source_symbol": "MaskedDiffusion.sample/_sample_k_update (k=1 fair path)",
+      "dimensions": {
+        "L": 6,
+        "batch": 2
+      },
+      "seed": 404,
+      "tolerance": 0.0,
+      "discrepancies": [],
+      "preserves": "intended behavior: Algorithm-1 sequential stochastic (fair) sampling; no revision of committed tokens",
+      "randomness": "torch.manual_seed(404); multinomial for coordinates, bernoulli for tokens",
+      "note": "intermediate states recorded after every single-token update"
+    },
+    {
+      "fixture": "greedy_reconstruction",
+      "source_commit": "fea744d41b4c960c8dbfe8df7f6da82f297ba8b7",
+      "environment": {
+        "python": "3.12.13",
+        "torch": "2.12.0",
+        "platform": "macOS-26.5.2-arm64-arm-64bit"
+      },
+      "source_module": "diffusion.py",
+      "source_symbol": "MaskedDiffusion.mask_and_sample (decoding_strategy='greedy')",
+      "dimensions": {
+        "L": 6,
+        "batch": 2,
+        "T0": 4
+      },
+      "seed": 505,
+      "tolerance": 1e-06,
+      "discrepancies": [],
+      "preserves": "intended behavior: pre-scheduled random order, threshold-at-0.5 decoding, no revision",
+      "randomness": "torch.manual_seed(505); randperm order draw replayed explicitly"
+    }
+  ]
+}

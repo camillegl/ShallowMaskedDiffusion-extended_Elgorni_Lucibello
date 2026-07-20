@@ -1,0 +1,151 @@
+{
+  "provenance": {
+    "notebook_path": "experiments-analysis/analysis_mmd_distribution_distance_corrected.ipynb",
+    "notebook_sha256": "3bc29d1904fe1444db0e5815bc4da28c4ec40b895c4889c2513d87a715b5966c",
+    "cell_index": 11,
+    "block_sha256": "4fe18103d5628f89b7d69b465eee603d29377e0ac91dc6353b6a70698ba689f1",
+    "block_functions": [
+      "lambda_key",
+      "kernel_sums_exponential_hamming",
+      "normalized_mmd_weights",
+      "compute_mmd_biased_unbiased"
+    ],
+    "generation_method": "exec of the exact byte-hashed block above in an isolated namespace (torch, numpy only); production maskeddiffusion.metrics.mmd was NOT imported while generating these expected values."
+  },
+  "inputs": {
+    "dtype": "float32",
+    "X": [
+      [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      [
+        1.0,
+        -1.0,
+        1.0,
+        -1.0,
+        1.0,
+        -1.0,
+        1.0,
+        -1.0,
+        1.0,
+        -1.0
+      ],
+      [
+        1.0,
+        1.0,
+        -1.0,
+        -1.0,
+        1.0,
+        1.0,
+        -1.0,
+        -1.0,
+        1.0,
+        1.0
+      ],
+      [
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      [
+        1.0,
+        1.0,
+        1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        1.0,
+        1.0,
+        -1.0,
+        -1.0
+      ]
+    ],
+    "Y": [
+      [
+        1.0,
+        -1.0,
+        -1.0,
+        1.0,
+        1.0,
+        -1.0,
+        -1.0,
+        1.0,
+        1.0,
+        -1.0
+      ],
+      [
+        -1.0,
+        1.0,
+        1.0,
+        -1.0,
+        -1.0,
+        1.0,
+        1.0,
+        -1.0,
+        -1.0,
+        1.0
+      ],
+      [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      [
+        1.0,
+        1.0,
+        -1.0,
+        1.0,
+        -1.0,
+        1.0,
+        -1.0,
+        1.0,
+        -1.0,
+        -1.0
+      ]
+    ],
+    "lambdas": [
+      4.0,
+      8.0
+    ],
+    "chunk_sizes_checked": [
+      1024,
+      3
+    ]
+  },
+  "expected": {
+    "mmd2_biased_lambda_4": 0.3559001064300537,
+    "mmd2_unbiased_lambda_4_raw": -0.038782413800557414,
+    "mmd2_biased_lambda_8": 0.43321686565876005,
+    "mmd2_unbiased_lambda_8_raw": -0.008483847975730895,
+    "mmd2_biased_mixture": 0.3945584860444069,
+    "mmd2_unbiased_mixture_raw": -0.023633130888144154,
+    "mmd_biased_mixture": 0.6281389066475718
+  },
+  "tolerance": {
+    "rel": 1e-06,
+    "abs": 1e-09
+  }
+}

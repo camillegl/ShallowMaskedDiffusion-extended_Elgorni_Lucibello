@@ -1,0 +1,70 @@
+{
+  "schema": "maskeddiffusion.reference_manifest.v1",
+  "description": "Protected MMD final-run notebooks and their required result dependencies. Files are referenced at their existing paths; nothing is duplicated. See docs/REFERENCE_RESULTS_MANIFEST.md.",
+  "recorded_at_commit": "fea744d41b4c960c8dbfe8df7f6da82f297ba8b7",
+  "recorded_date": "2026-07-20",
+  "notebooks_rerun_during_migration": false,
+  "protected_files": [
+    {
+      "path": "experiments-analysis/analysis_mmd_distribution_distance_corrected.ipynb",
+      "sha256": "3bc29d1904fe1444db0e5815bc4da28c4ec40b895c4889c2513d87a715b5966c",
+      "size_bytes": 680987,
+      "role": "authoritative final-run notebook (FINAL_RUN=True, lambda in {4,8})",
+      "git_status": "tracked, clean at recording time"
+    },
+    {
+      "path": "experiments-analysis/mmd_results_presentation_1.ipynb",
+      "sha256": "107b32c77bc88bd2bf7c53adb1e26b17c0bb2c58a2b2f3d36ff764fe4daa6d43",
+      "size_bytes": 856650,
+      "role": "historical presentation notebook (presentation-only, not authoritative)",
+      "git_status": "tracked, clean at recording time"
+    },
+    {
+      "path": "experiments-analysis/results/results_mmd_distribution_distance_corrected.csv",
+      "sha256": "28cf316597a8fc6622ca10052b3df8b2c3de531c078d222b9bd637bc818f4409",
+      "size_bytes": 45383,
+      "role": "final-run results table; loaded from disk by BOTH protected notebooks",
+      "git_status": "tracked"
+    },
+    {
+      "path": "experiments-analysis/results/results_mmd_time_sliced.csv",
+      "sha256": "dd84fcc8f9725fef93cc77f43b5932ca0ddecd609a308e9485b2659db5c8cbf2",
+      "size_bytes": 18378,
+      "role": "time-sliced diagnostic table; loaded from disk by both protected notebooks",
+      "git_status": "tracked"
+    },
+    {
+      "path": "datasets.py",
+      "sha256": "eb6487020d6da689f75e1d00cec5016e324a5254a3a56b508a996dd0ecfd6615",
+      "size_bytes": 3246,
+      "role": "frozen legacy module imported by the corrected notebook (re-runnability dependency)",
+      "git_status": "tracked"
+    },
+    {
+      "path": "diffusion.py",
+      "sha256": "fae6cc34080235aac058a8ae1dc52f1eeee0767db8a86cf39b1aa3165da0898f",
+      "size_bytes": 16160,
+      "role": "frozen legacy module imported by the corrected notebook (hash reflects the sanctioned Phase-2 removal of an unused turtle import)",
+      "git_status": "tracked, modified in working tree (uncommitted)"
+    },
+    {
+      "path": "models.py",
+      "sha256": "d87df4538f07f2b776e81ad1e4b8af0054e9a41b42f1bc85696f30ba44d0212b",
+      "size_bytes": 8912,
+      "role": "frozen legacy module imported by diffusion.py (re-runnability dependency)",
+      "git_status": "tracked"
+    },
+    {
+      "path": "experiments-analysis/results/results_mmd_distribution_distance_corrected_10k.csv",
+      "sha256": "6c7dce56c8d075fc1cb1e1617cdecef242455d354d3632470e4881a67bc18498",
+      "size_bytes": 267867,
+      "role": "10k-sample predecessor of the final run; kept as supporting evidence",
+      "git_status": "tracked"
+    }
+  ],
+  "notes": [
+    "The corrected notebook also references gitignored scratch checkpoints (results/*_checkpoint.csv) used only for resume during its own execution; they are not required to support the recorded conclusions.",
+    "The 20 tracked PNGs under experiments-analysis/figures/ are OUTPUTS of the corrected notebook, not inputs; they are preserved in git but not hash-pinned here.",
+    "The corrected notebook imports the legacy flat modules 'datasets' and 'diffusion' from the repository root; those modules must remain importable for the notebook to be re-runnable."
+  ]
+}

@@ -1,0 +1,114 @@
+# MMD notebook provenance
+
+Records exactly where the MMD estimator implemented in
+`src/maskeddiffusion/metrics/mmd.py` comes from in the protected notebook, and
+how the independent regression fixture in
+`tests/fixtures/mmd_notebook_reference_v1/` was generated. This document does
+not modify, execute, or re-hash-pin the notebook; it only records what was
+read from it.
+
+## Notebook identity
+
+- Path: `experiments-analysis/analysis_mmd_distribution_distance_corrected.ipynb`
+- SHA-256: `3bc29d1904fe1444db0e5815bc4da28c4ec40b895c4889c2513d87a715b5966c`
+  (matches `docs/REFERENCE_RESULTS_MANIFEST.md`; unchanged by this work)
+- Notebook cell index (0-based, code cells only): **11**
+
+Cell 11 is a single large code cell defining training/evaluation/MMD/plotting
+helpers together. The MMD-relevant functions occupy one contiguous sub-block
+within it, from `def lambda_key(...)` up to (not including) the
+`# Nearest-neighbour overlap helper` section header.
+
+## Extracted block
+
+- SHA-256 of the extracted block's exact source text (`str.encode()`,
+  UTF-8, no normalization beyond a single trailing-newline strip + `\n`):
+  `4fe18103d5628f89b7d69b465eee603d29377e0ac91dc6353b6a70698ba689f1`
+- Saved verbatim at
+  `tests/fixtures/mmd_notebook_reference_v1/notebook_cell11_mmd_block.py`
+  for audit — this file is a byte-exact copy of the notebook cell's source,
+  not a paraphrase or reimplementation.
+- Functions in the block, in order:
+  1. `lambda_key(lam)` — stable string key for a λ value.
+  2. `kernel_sums_exponential_hamming(X, Y, lambdas, chunk_size, device)` —
+     chunked sum of `exp(-λ·(1-q)/2)` over all `(i, j)` pairs, `q = X·Yᵀ/N`;
+     diagonal included, no exclusion performed inside this function.
+  3. `normalized_mmd_weights(lambdas, weights)` — normalizes mixture weights
+     to sum to 1; uniform if `weights is None`.
+  4. `compute_mmd_biased_unbiased(X, Y, lambdas, chunk_size, device, weights)`
+     — biased V-statistic and raw (unclipped) unbiased U-statistic per λ,
+     plus mixture-kernel summaries.
+
+## Equations implemented (both notebook and package)
+
+- Normalized Hamming distance: `d(x, y) = (1 − x·y/N) / 2`.
+- Kernel: `k_λ(x, y) = exp(−λ · d(x, y))`.
+- Biased (V-statistic) MMD²:
+  `S_XX/m² + S_YY/n² − 2·S_XY/(m·n)`, all pairs including diagonal.
+- Raw unbiased (U-statistic) MMD²:
+  `(S_XX − diag_XX)/(m·(m−1)) + (S_YY − diag_YY)/(n·(n−1)) − 2·S_XY/(m·n)`,
+  self-terms off-diagonal, cross-term uses all `m·n` pairs (no diagonal
+  exclusion for `X ≠ Y`). **Never clipped** — the notebook stores this value
+  raw (`..._raw` suffix) and may be negative; only the *biased* distance is
+  passed through `sqrt(max(mmd2, 0))` for display (`mmd_biased_lambda_*`,
+  `mmd_biased_mixture`).
+- Mixture-kernel MMD²: nonnegative-weighted sum over λ (uniform by default;
+  `mmd_lambdas = [4.0, 8.0]` in the notebook's own run configuration cell,
+  matching the package's default `lambdas=(4.0, 8.0)`).
+- Diagonal self-kernel value: `k_λ(x, x) = exp(0) = 1` for all λ — used as a
+  closed-form shortcut (`diag_XX = m`, `diag_YY = n`) rather than computed
+  from the kernel-sum matrices, identically in both notebook and package.
+
+## dtype, chunking, and clipping behavior
+
+- dtype: both cast inputs to `torch.float32` before the matmul
+  (`kernel_sums_exponential_hamming` in both notebook and package call
+  `.to(dtype=torch.float32)` / `.to(torch.float32)`).
+- Chunking: both chunk over `i` and `j` in blocks of `chunk_size` (default
+  1024 in both) and never materialize more than `chunk_size²` kernel entries
+  at once. This is an accumulation-order change only; both implementations'
+  outputs agree with the unchunked (`chunk_size=1024`, larger than the tiny
+  fixture) computation to float32 rounding (~1e-6 relative on the tiny
+  fixture; see `tests/fixtures/mmd_notebook_reference_v1/fixture.json` for
+  the exact tolerance used).
+- Clipping/sqrt: `mmd2_biased_*` and `mmd2_unbiased_*_raw` are never clipped
+  internally by `compute_mmd`/`compute_mmd_biased_unbiased`; only the
+  human-readable "distance" fields (`mmd_biased_lambda_*`,
+  `mmd_biased_mixture`) apply `sqrt(max(mmd2, 0))`, and only to the *biased*
+  value — the package names this transform `sqrt_clipped_mmd` and applies it
+  identically.
+
+## Discrepancies between notebook and package
+
+**None found.** `src/maskeddiffusion/metrics/mmd.py` is a line-for-line
+transcription of the extracted block (renamed to drop the `_notebook_`-style
+prefixes and typed with a dataclass return instead of a flat dict), with the
+same chunking strategy, same dtype cast, same diagonal shortcut, and the same
+never-clip-unbiased / clip-only-biased-display behavior. If a future package
+change diverges from this block, record the divergence here and in
+`docs/UPSTREAM_DISCREPANCIES.md` — do not resolve silently.
+
+## Independent fixture
+
+`tests/fixtures/mmd_notebook_reference_v1/fixture.json` was generated by
+`tests/fixtures/mmd_notebook_reference_v1/generate_fixture.py`, a committed,
+rerunnable script — not an ad hoc one-off — that re-derives the extraction
+independently: it reads the protected notebook itself, verifies its SHA-256
+against `docs/REFERENCE_RESULTS_MANIFEST.md`, re-extracts the block between
+the same two markers, verifies the block's SHA-256 against the pinned value
+above (failing loudly on any mismatch), and only then `exec()`s the block in
+an isolated namespace containing only `torch` and `numpy` against a small
+fixed pair of explicit ±1 binary arrays (5×10 and 4×10). **The production
+`maskeddiffusion.metrics.mmd` module was not imported while generating these
+expected values** — see the fixture's own `provenance.generation_method`
+field. Rerunning the script reproduces `fixture.json` byte-for-byte (checked
+at the time this document was written). The fixture records both an unchunked (`chunk_size=1024`) and a
+chunked (`chunk_size=3`) evaluation of the reference block and asserts they
+agree to float32 tolerance before being written, proving the reference
+itself is chunking-invariant independent of the package.
+
+`tests/regression/test_mmd_notebook_equivalence.py` loads this fixture and
+asserts `maskeddiffusion.metrics.mmd.compute_mmd` reproduces every recorded
+value (biased per-λ, raw unbiased per-λ, mixture biased/unbiased) under both
+chunked and unchunked package computation, in addition to the pre-existing
+hand-transcribed comparison test.
