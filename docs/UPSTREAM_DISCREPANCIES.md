@@ -160,3 +160,33 @@ References are at commit `2e2db70`.
   created and `uv.lock` un-gitignored (both present in the working tree, awaiting the
   user's commit); undocumented CLI flags now documented
   by deprecation labels in `train.py` help or superseded by the new CLI.
+
+## D14 — `docs/ORIGINAL_ARCHITECTURE.md`'s U-turn description names the wrong method
+
+- **Evidence.** `docs/ORIGINAL_ARCHITECTURE.md`'s item 4 ("U-turn experiments") describes
+  `test_step` (`diffusion.py:119-126`, on the `guthlac` branch after the retirement of the
+  driver script `experiments-analysis/run_uturn_experiments.py` that this text used to also
+  cite) as reconstructing "with `mask_and_sample` (default greedy)". Direct reading of
+  `diffusion.py:114-126`'s U-turn block shows it actually calls
+  `self.sample(batch_size, k=1, xt=xt)` — the k-token generative sampler
+  (`diffusion.py:147-231`, item 1 in the same doc, "always stochastic (fair); no greedy
+  option") — not `mask_and_sample` (`diffusion.py:233-298`, item 2, the method that *does*
+  support a `greedy` decoding). Found by the `scientific-auditor` reviewer during the
+  Phase 3 repository-retirement branch (`guthlac`) reconciliation; this mismatch predates
+  that branch (present identically on `main`) and was not introduced by any Phase 3
+  deletion — the branch's edit only removed the now-stale driver-script citation and
+  otherwise reaffirmed the existing (already-inaccurate) sentence.
+- **Consequence.** A reader following `docs/ORIGINAL_ARCHITECTURE.md`'s U-turn description
+  would incorrectly expect the logged `test/uturn_overlap_t{t}` metric to reflect
+  `mask_and_sample`'s greedy, per-step-unmasking decoding, when it actually reflects
+  `self.sample`'s single-shot (`k=1`... actually `k` positions per call, `xt` partially
+  masked) stochastic reconstruction. Whether the U-turn mechanism has ever been exercised
+  against the hidden-manifold (fixed-`F`) teacher, as opposed to only legacy uniform-data
+  checkpoints, is not established by this record.
+- **Proposed resolution.** Correct `docs/ORIGINAL_ARCHITECTURE.md` item 4 to name
+  `self.sample`, not `mask_and_sample`.
+- **Type.** Engineering (documentation accuracy only; no behavior change implied).
+  **Status.** Resolved (Phase 3, same commit): `docs/ORIGINAL_ARCHITECTURE.md` item 4
+  corrected to name `self.sample`. No code changed (`diffusion.py` remains frozen and
+  byte-identical to `main`). The open question of whether U-turn has been exercised
+  against the hidden-manifold teacher remains unresolved and is not addressed by this fix.

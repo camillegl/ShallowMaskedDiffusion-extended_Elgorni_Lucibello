@@ -106,8 +106,10 @@ logit = xt @ Wᵀ + m @ Vᵀ  (+ b if bias)      # m = 1[xt == 0]
 3. **`mask_and_sample_oneshot`** (`diffusion.py:300-379`) — one forward pass on the masked
    input, then reveals all masked positions simultaneously (fair or thresholded).
 4. **U-turn experiments** (`test_step` `diffusion.py:119-126`): mask a fraction `t0` of a
-   training datum, reconstruct with `mask_and_sample` (default greedy), measure retrieval
-   overlap. The driver script `experiments-analysis/run_uturn_experiments.py` that invoked
+   training datum, reconstruct with `self.sample` (item 1's k-token generative sampler,
+   always stochastic/"fair" — not `mask_and_sample`, corrected here; see
+   `docs/UPSTREAM_DISCREPANCIES.md` D14), measure retrieval overlap. The driver script
+   `experiments-analysis/run_uturn_experiments.py` that invoked
    this on batches of legacy-CLI checkpoints was retired on `guthlac`; the reused mechanism
    (`test_step`) is unaffected — see `docs/archive/HISTORICAL_NOTEBOOKS_ARCHIVE.md`.
 
