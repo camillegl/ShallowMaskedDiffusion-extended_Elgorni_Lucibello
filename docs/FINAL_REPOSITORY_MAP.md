@@ -1,5 +1,11 @@
 # Final repository map (post-retirement target)
 
+**Phase 3 status: MERGED.** Every "on `guthlac` only" / "isolated on the `guthlac` branch"
+statement below described the state before review. All of Phase 3 was merged into `main`
+via [PR #2](https://github.com/camillegl/ShallowMaskedDiffusion-extended_Elgorni_Lucibello/pull/2)
+(merge commit `c6a716f2e8915c7a01864d1658275f9305586f5`) — the "post-retirement target"
+this document describes is now `main`'s actual shape, not merely a target.
+
 This document describes the **intended** shape of the repository after all
 planned retirement phases (Hopfield, DMFT, Julia, notebook, result, and
 dependency retirement) are complete. It is a target, not a status report:

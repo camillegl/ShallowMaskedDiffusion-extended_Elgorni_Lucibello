@@ -30,6 +30,27 @@ from .masking import (
 from .models import LinearMaskedScore
 
 
+def _safe_inverse_time(t: torch.Tensor) -> torch.Tensor:
+    """1/t, with t == 0 mapped exactly to 0 instead of inf.
+
+    `t ~ U(min_time, 1)` can draw exactly 0.0 even when min_time == 0.0 (its
+    documented default) — torch.rand's range is [0, 1). When it does, every
+    coordinate in that row is masked with probability 0 (bernoulli_mask), so
+    `batch.is_masked` is all-False for that row; the intended contribution
+    of that row to the loss is exactly 0. But `weighted = losses * (1/t) *
+    is_masked` computes `finite * inf * 0`, which is NaN under IEEE-754, not
+    0 — corrupting the whole batch's loss and gradient (docs/UPSTREAM_DISCREPANCIES.md
+    D16). This maps exactly t == 0 to a weight of 0 (its all-False mask row
+    then contributes an exact 0 regardless of the multiplier) while leaving
+    1/t untouched — to full float precision — for every t > 0, including
+    values arbitrarily close to 0; a clamp_min(eps) would instead silently
+    distort the estimator for any positive draw below eps.
+    """
+    is_zero = t == 0
+    safe_t = torch.where(is_zero, torch.ones_like(t), t)
+    return torch.where(is_zero, torch.zeros_like(t), 1.0 / safe_t)
+
+
 @dataclass
 class ObjectiveResult:
     per_example: torch.Tensor  # (B,) unreduced data-loss per example
@@ -88,7 +109,7 @@ def continuous_time_masked_bce(
     if min_time > 0.0:
         t = min_time + (1.0 - min_time) * t
     batch = bernoulli_mask(x, t, generator)
-    weight = (1.0 / t).unsqueeze(1).expand_as(x)
+    weight = _safe_inverse_time(t).unsqueeze(1).expand_as(x)
     return _finalize(
         model, batch, weight, l2reg, train_size, extra={"mean_time": float(t.mean().item())}
     )
@@ -103,7 +124,14 @@ def continuous_time_masked_bce_from_batch(
 ) -> ObjectiveResult:
     """Same estimator evaluated on a pre-built MaskedBatch (deterministic tests)."""
     t = batch.mask_probability
-    weight = (1.0 / t).unsqueeze(1).expand_as(batch.values)
+    zero_rows_with_mask = (t == 0) & batch.is_masked.any(dim=1)
+    if bool(zero_rows_with_mask.any()):
+        raise ValueError(
+            "batch has masked coordinates in a row with mask_probability t == 0 — "
+            "inconsistent with the estimator, which requires t == 0 rows to be "
+            "entirely unmasked (weight 1/t is defined as exactly 0 there)"
+        )
+    weight = _safe_inverse_time(t).unsqueeze(1).expand_as(batch.values)
     return _finalize(
         model, batch, weight, l2reg, train_size, extra={"mean_time": float(t.mean().item())}
     )

@@ -1,5 +1,6 @@
 import math
 
+import pytest
 import torch
 
 from maskeddiffusion.models import LinearMaskedScore, LinearScoreConfig
@@ -85,3 +86,31 @@ def test_probabilities_are_sigmoid_of_logits():
     x, m = batch()
     with torch.no_grad():
         torch.testing.assert_close(model.probabilities(x, m), torch.sigmoid(model(x, m)))
+
+
+@pytest.mark.parametrize(
+    "field,bad_value",
+    [
+        ("normalization", "explicit_sqrt_N"),  # capitalization typo
+        ("v_policy", "trainble"),  # typo
+        ("bias_policy", "frozen"),  # near-miss of "frozen_zero"
+        ("diagonal_policy", "diag"),
+    ],
+)
+def test_rejects_unrecognized_config_strings(field, bad_value):
+    """An unrecognized string must raise, not silently fall through to
+    another valid scientific configuration via a broad `else` branch."""
+    with pytest.raises(ValueError, match=field):
+        LinearScoreConfig(visible_dim=8, **{field: bad_value})
+
+
+def test_rejects_nonpositive_visible_dim():
+    with pytest.raises(ValueError):
+        LinearScoreConfig(visible_dim=0)
+    with pytest.raises(ValueError):
+        LinearScoreConfig(visible_dim=-4)
+
+
+def test_rejects_non_int_visible_dim():
+    with pytest.raises(TypeError):
+        LinearScoreConfig(visible_dim=8.0)

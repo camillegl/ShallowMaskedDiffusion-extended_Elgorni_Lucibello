@@ -24,6 +24,7 @@ must be justified and recorded.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -41,6 +42,23 @@ SamplerName = Literal[
     "one_shot_greedy",
 ]
 
+_SAMPLER_NAMES: frozenset[str] = frozenset(
+    {
+        "sequential_random_stochastic",
+        "sequential_random_greedy",
+        "sequential_confidence_greedy",
+        "parallel_random_stochastic",
+        "parallel_random_greedy",
+        "one_shot_stochastic",
+        "one_shot_greedy",
+    }
+)
+_SEQUENTIAL_NAMES = frozenset(
+    {"sequential_random_stochastic", "sequential_random_greedy", "sequential_confidence_greedy"}
+)
+_PARALLEL_NAMES = frozenset({"parallel_random_stochastic", "parallel_random_greedy"})
+_ONE_SHOT_NAMES = frozenset({"one_shot_stochastic", "one_shot_greedy"})
+
 
 @dataclass(frozen=True)
 class SamplerConfig:
@@ -48,6 +66,47 @@ class SamplerConfig:
     tokens_per_step: int = 1
     temperature: float = 1.0
     revision_policy: Literal["never"] = "never"
+
+    def __post_init__(self) -> None:
+        # `Literal` is not runtime-enforced by dataclasses; an unrecognized
+        # sampler_name would otherwise silently fall into the `else: #
+        # parallel_*` branch of `sample()` below instead of raising.
+        if self.sampler_name not in _SAMPLER_NAMES:
+            raise ValueError(f"sampler_name {self.sampler_name!r} not in {sorted(_SAMPLER_NAMES)}")
+        if not isinstance(self.tokens_per_step, int) or isinstance(self.tokens_per_step, bool):
+            raise TypeError(
+                f"tokens_per_step must be int, got {type(self.tokens_per_step).__name__}"
+            )
+        if self.tokens_per_step < 1:
+            raise ValueError(f"tokens_per_step must be >= 1, got {self.tokens_per_step}")
+        if not math.isfinite(self.temperature) or self.temperature <= 0:
+            raise ValueError(f"temperature must be finite and > 0, got {self.temperature}")
+        # tokens_per_step only affects parallel_* samplers (sequential_* always
+        # take k=1, one_shot_* resolve every coordinate at once); recording an
+        # arbitrary value for the others would misrepresent provenance for a
+        # setting that was silently ignored.
+        if self.sampler_name not in _PARALLEL_NAMES and self.tokens_per_step != 1:
+            raise ValueError(
+                f"tokens_per_step={self.tokens_per_step} has no effect on sampler "
+                f"{self.sampler_name!r} (only parallel_* samplers use it) — pass 1 "
+                "or omit it"
+            )
+        # temperature != 1.0 is not rejected here for stochastic/soft-decode
+        # samplers: docs/RESEARCH_SPEC.md and this module's docstring require
+        # temperature == 1.0 for any contract-comparable run, but a non-unit
+        # value there is a deliberate new sampler identity, not a malformed
+        # config. Greedy decoding (`logits >= 0`, see _decode_tokens) never
+        # reads temperature at all, so a non-unit value for a greedy sampler
+        # is not a new identity — it is silently ineffective and misleading
+        # provenance, so it is rejected outright.
+        if "greedy" in self.sampler_name and self.temperature != 1.0:
+            raise ValueError(
+                f"temperature={self.temperature} has no effect on greedy sampler "
+                f"{self.sampler_name!r} (greedy decoding ignores temperature) — pass "
+                "1.0 or omit it"
+            )
+        if self.revision_policy != "never":
+            raise ValueError(f"revision_policy must be 'never', got {self.revision_policy!r}")
 
     def identity(self) -> dict[str, object]:
         coordinate_selection = {
@@ -113,6 +172,15 @@ def sample(
     """
     n = model.config.visible_dim
     device = next(model.parameters()).device
+    named_gens = (("order_generator", order_generator), ("token_generator", token_generator))
+    for gen_name, gen in named_gens:
+        if gen is not None and gen.device != device:
+            raise ValueError(
+                f"{gen_name}.device ({gen.device}) != model device ({device}); "
+                "torch requires the generator and the tensor it fills to share a "
+                "device — pass device= when creating the generator (e.g. "
+                "seeds.generator(stream, device=device))"
+            )
     if initial_values is None:
         values = torch.zeros((batch_size, n), device=device)
         is_masked = torch.ones((batch_size, n), dtype=torch.bool, device=device)
@@ -140,16 +208,16 @@ def sample(
             result.trajectory_masks.append(is_masked.clone())
         return result
 
-    if name in (
-        "sequential_random_stochastic",
-        "sequential_random_greedy",
-        "sequential_confidence_greedy",
-    ):
+    if name in _SEQUENTIAL_NAMES:
         k = 1
-    else:  # parallel_*
+    elif name in _PARALLEL_NAMES:
         k = config.tokens_per_step
-        if k < 1:
-            raise ValueError("tokens_per_step must be >= 1")
+    else:
+        # Unreachable if `config` passed through SamplerConfig.__post_init__
+        # (it validates sampler_name against the same closed set), kept as
+        # defense in depth against a SamplerConfig constructed by bypassing
+        # __post_init__ (e.g. object.__new__ in a test).
+        raise ValueError(f"unhandled sampler_name {name!r}")
 
     while bool(is_masked.any()):
         logits = model(values, is_masked)

@@ -39,6 +39,11 @@ VPolicy = Literal["frozen_zero", "trainable"]
 BiasPolicy = Literal["none", "trainable", "frozen_zero"]
 DiagonalPolicy = Literal["zero", "free"]
 
+_NORMALIZATIONS: frozenset[str] = frozenset({"explicit_sqrt_n", "legacy_init_only"})
+_V_POLICIES: frozenset[str] = frozenset({"frozen_zero", "trainable"})
+_BIAS_POLICIES: frozenset[str] = frozenset({"none", "trainable", "frozen_zero"})
+_DIAGONAL_POLICIES: frozenset[str] = frozenset({"zero", "free"})
+
 
 @dataclass(frozen=True)
 class LinearScoreConfig:
@@ -47,6 +52,28 @@ class LinearScoreConfig:
     v_policy: VPolicy = "frozen_zero"
     bias_policy: BiasPolicy = "none"
     diagonal_policy: DiagonalPolicy = "zero"
+
+    def __post_init__(self) -> None:
+        # `Literal` types are not enforced at runtime by dataclasses; an
+        # unrecognized string here would otherwise fall through the `else`
+        # branches in __init__ below and silently select a different
+        # scientific configuration instead of raising.
+        if not isinstance(self.visible_dim, int) or isinstance(self.visible_dim, bool):
+            raise TypeError(f"visible_dim must be int, got {type(self.visible_dim).__name__}")
+        if self.visible_dim <= 0:
+            raise ValueError(f"visible_dim must be > 0, got {self.visible_dim}")
+        if self.normalization not in _NORMALIZATIONS:
+            raise ValueError(
+                f"normalization {self.normalization!r} not in {sorted(_NORMALIZATIONS)}"
+            )
+        if self.v_policy not in _V_POLICIES:
+            raise ValueError(f"v_policy {self.v_policy!r} not in {sorted(_V_POLICIES)}")
+        if self.bias_policy not in _BIAS_POLICIES:
+            raise ValueError(f"bias_policy {self.bias_policy!r} not in {sorted(_BIAS_POLICIES)}")
+        if self.diagonal_policy not in _DIAGONAL_POLICIES:
+            raise ValueError(
+                f"diagonal_policy {self.diagonal_policy!r} not in {sorted(_DIAGONAL_POLICIES)}"
+            )
 
     def identity(self) -> dict[str, object]:
         return {

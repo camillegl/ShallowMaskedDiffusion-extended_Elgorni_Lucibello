@@ -109,6 +109,7 @@ class RunArtifact:
         model: dict[str, Any],
         input_paths: list[str] | None = None,
         repo_root: Path | None = None,
+        extra: dict[str, Any] | None = None,
     ) -> None:
         manifest = {
             "schema_version": SCHEMA_VERSION,
@@ -122,6 +123,7 @@ class RunArtifact:
             "model": model,
             "input_paths": input_paths or [],
             "files": self._files,
+            **(extra or {}),
         }
         (self.root / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
 

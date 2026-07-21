@@ -1,5 +1,10 @@
 # Frozen legacy runtime
 
+**Phase 3 status: MERGED.** References to `guthlac` below (`train.py` retirement,
+`scipy`/`numba`/`tensorboard` removal) describe Phase 3 work that was subsequently merged
+into `main` via [PR #2](https://github.com/camillegl/ShallowMaskedDiffusion-extended_Elgorni_Lucibello/pull/2)
+(merge commit `c6a716f2e8915c7a01864d1658275f9305586f5`) — those changes are on `main` too.
+
 Status as of Phase 3A, committed and pushed at
 `ed42906cffd0b2b5989eb53e46f00ca6cdde4171` on `main`/`origin/main`. This
 document records the operating rules for the three legacy flat modules that

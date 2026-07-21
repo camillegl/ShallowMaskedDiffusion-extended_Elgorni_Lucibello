@@ -50,10 +50,10 @@ Python-3.11 claim is wrong); where it conflicts with `docs/`, `docs/` wins.
   `datasets.py` are frozen compatibility modules required by the protected corrected MMD
   notebook (`docs/REFERENCE_RESULTS_MANIFEST.md`, `docs/FROZEN_LEGACY_RUNTIME.md`) and must
   stay importable. `train.py` was a separate, deprecated historical CLI, never hash-pinned
-  and never a protected-notebook dependency; on the `guthlac` branch it has been retired
-  (deleted) now that the old Julia scripts and superseded notebooks that depended on it are
-  also retired (see `docs/archive/JULIA_LEGACY_ARCHIVE.md`,
-  `docs/archive/HISTORICAL_NOTEBOOKS_ARCHIVE.md`). It remains present on `main`.
+  and never a protected-notebook dependency; it was retired (deleted) in the Phase 3
+  retirement, now merged to `main`, once the old Julia scripts and superseded notebooks
+  that depended on it were also retired (see `docs/archive/JULIA_LEGACY_ARCHIVE.md`,
+  `docs/archive/HISTORICAL_NOTEBOOKS_ARCHIVE.md`).
 - Protected artifacts (never modify/rerun/strip):
   `experiments-analysis/analysis_mmd_distribution_distance_corrected.ipynb`,
   `experiments-analysis/mmd_results_presentation_1.ipynb`, and the result CSVs pinned in
@@ -64,19 +64,21 @@ Python-3.11 claim is wrong); where it conflicts with `docs/`, `docs/` wins.
   Phase 3A; it remains recoverable from the stable tag `phase2-hidden-manifold-foundation`
   (see `docs/LEGACY_SCIENTIFIC_INDEX.md`). Rules in `.claude/rules/` apply.
 
-## Verified commands (ran 2026-07-20, Phase 2)
+## Verified commands (ran 2026-07-20, Phase 2; re-verified after the Phase 3 merge to `main`)
 
-- `uv run pytest -q` — full test suite (125 tests).
+- `uv run pytest -q` — full test suite (200 tests as of Phase 4B provenance hardening,
+  PR #3; was 125 at Phase 2, 128 after Phase 3's CI-hardening tests — see
+  `docs/MIGRATION_REPORT.md`).
 - `scripts/reproduce_smoke.sh` — tiny CPU end-to-end run; integration check only.
 - `scripts/validate_reference_artifacts.sh` — verify protected-artifact hashes.
 - `uv run maskeddiffusion-train --help` (likewise `-sample`, `-evaluate`,
   `-validate-artifact`).
-- `uv run python train.py --help` — legacy CLI on `main`; `--alpha` there means M/L; model
-  strings use underscores (`rfs10_tanh`). Not available on `guthlac`, where `train.py` was
-  retired (see `docs/MIGRATION_REPORT.md`'s Phase 3F section).
-- `.github/workflows/ci.yml` (`guthlac` only, not yet on `main`) runs the equivalent of the
-  commands above plus the four CLI `--help` checks and `git diff --check`, on every
-  push/PR to `main` and `guthlac`.
+- `train.py`, the legacy CLI (`--alpha` meaning M/L), was retired (deleted) in Phase 3,
+  now merged to `main` — it no longer exists on any current branch; see
+  `docs/MIGRATION_REPORT.md`'s Phase 3F section and `docs/archive/JULIA_LEGACY_ARCHIVE.md`.
+- `.github/workflows/ci.yml` (on `main` since the Phase 3 merge) runs the equivalent of the
+  commands above plus the four CLI `--help` checks and a committed-range whitespace check,
+  on every push/PR to `main` and `guthlac`.
 
 ## Forbidden actions
 

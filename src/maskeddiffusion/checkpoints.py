@@ -18,6 +18,8 @@ config, not reproduced from their original RNG draws.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -55,6 +57,51 @@ def git_metadata(repo_root: Path | None = None) -> dict[str, Any]:
         return {"git_sha": None, "git_dirty": None}
 
 
+def checkpoint_identity(
+    model_state: dict[str, Any],
+    model_config: dict[str, Any],
+    config_dict: dict[str, Any],
+    teacher_id: str,
+    step: int,
+    examples_seen: int,
+) -> str:
+    """Stable content hash of a checkpoint: model parameter bytes/dtype/shape,
+    the model's own configuration (normalization/v_policy/bias_policy/
+    diagonal_policy/visible_dim — `LinearScoreConfig.identity()`), the full
+    resolved run config (`RunConfig.to_dict()` — dimensions, seeds, training,
+    sampler), and the teacher/step/examples_seen it was trained under. Two
+    checkpoints with this same identity have identical weights (including
+    dtype and shape), identical model configuration, and identical run
+    configuration under an identical teacher at an identical point in
+    training (mirrors `HiddenManifoldTeacher.teacher_id`'s design in
+    teacher.py). `model_config` is included because a weight-preserving edit
+    to it (e.g. flipping `normalization` without touching a single parameter
+    tensor) changes how those weights are interpreted by the model.
+    `config_dict` is included because `maskeddiffusion-evaluate` reconstructs
+    the training set it scores against from this checkpoint's own recorded
+    `config` (`train_size`, `train_data_seed`) — a weight-preserving edit to
+    that config (e.g. swapping in a different `train_data_seed`) would
+    silently point evaluation at a different reconstructed training set
+    without invalidating the checkpoint's identity if it weren't hashed here.
+    Recorded at save time and re-verified by `load_checkpoint` on every load,
+    so silent tampering with checkpoint weights or configuration (leaving the
+    stored id unchanged) is caught rather than trusted. Also lets downstream
+    artifacts (e.g. a sample run's manifest) verify they were produced from
+    *this exact* checkpoint, not merely one with the same file path."""
+    h = hashlib.sha256()
+    for key in sorted(model_state):
+        tensor = model_state[key]
+        h.update(key.encode())
+        h.update(str(tuple(tensor.shape)).encode())
+        h.update(str(tensor.dtype).encode())
+        h.update(tensor.detach().cpu().contiguous().numpy().tobytes())
+    h.update(json.dumps(model_config, sort_keys=True).encode())
+    h.update(json.dumps(config_dict, sort_keys=True).encode())
+    h.update(teacher_id.encode())
+    h.update(f"{step}:{examples_seen}".encode())
+    return "ckpt-" + h.hexdigest()[:16]
+
+
 def save_checkpoint(
     path: str | Path,
     *,
@@ -66,15 +113,20 @@ def save_checkpoint(
     teacher_id: str,
     generator_states: dict[str, torch.Tensor],
 ) -> None:
+    model_state = model.state_dict()
+    model_config = model.config.identity()
     payload = {
         "format": "maskeddiffusion.checkpoint.v1",
-        "model_state": model.state_dict(),
-        "model_config": model.config.identity(),
+        "model_state": model_state,
+        "model_config": model_config,
         "optimizer_state": optimizer.state_dict(),
         "step": step,
         "examples_seen": examples_seen,
         "config": config_dict,
         "teacher_id": teacher_id,
+        "checkpoint_id": checkpoint_identity(
+            model_state, model_config, config_dict, teacher_id, step, examples_seen
+        ),
         "generator_states": generator_states,
         "package_version": __version__,
         **git_metadata(),
@@ -88,6 +140,21 @@ def load_checkpoint(path: str | Path) -> dict[str, Any]:
     payload = torch.load(Path(path), map_location="cpu", weights_only=False)
     if payload.get("format") != "maskeddiffusion.checkpoint.v1":
         raise ValueError(f"unknown checkpoint format {payload.get('format')!r}")
+    stored_id = payload.get("checkpoint_id")
+    recomputed_id = checkpoint_identity(
+        payload["model_state"],
+        payload["model_config"],
+        payload["config"],
+        payload["teacher_id"],
+        payload["step"],
+        payload["examples_seen"],
+    )
+    if stored_id != recomputed_id:
+        raise ValueError(
+            f"checkpoint {path} is corrupt or was tampered with: stored checkpoint_id "
+            f"{stored_id!r} does not match the hash recomputed from its own "
+            f"model_state/model_config/config/teacher_id/step/examples_seen ({recomputed_id!r})"
+        )
     return payload
 
 

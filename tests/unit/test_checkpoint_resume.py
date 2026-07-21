@@ -74,3 +74,108 @@ def test_resume_rejects_wrong_teacher(tmp_path):
 
     with pytest.raises(ValueError, match="teacher_id"):
         train(other, device="cpu", resume_from=ckpt_dir / "final.pt")
+
+
+def test_load_checkpoint_rejects_tampered_weights(tmp_path):
+    """A checkpoint whose weights were modified after saving, with the stored
+    checkpoint_id left untouched, must be rejected on load rather than
+    silently trusted (checkpoint_id is a content hash, recomputed on load)."""
+    import pytest
+
+    from maskeddiffusion.checkpoints import load_checkpoint
+
+    cfg = make_config(2)
+    ckpt_dir = tmp_path / "c"
+    train(cfg, device="cpu", checkpoint_dir=ckpt_dir)
+    path = ckpt_dir / "final.pt"
+
+    payload = torch.load(path, map_location="cpu", weights_only=False)
+    tampered_key = next(iter(payload["model_state"]))
+    payload["model_state"][tampered_key] = payload["model_state"][tampered_key] + 1.0
+    torch.save(payload, path)  # checkpoint_id left as-is: simulates tampering
+
+    with pytest.raises(ValueError, match="checkpoint_id"):
+        load_checkpoint(path)
+
+
+def test_load_checkpoint_accepts_untampered_roundtrip(tmp_path):
+    from maskeddiffusion.checkpoints import load_checkpoint
+
+    cfg = make_config(2)
+    ckpt_dir = tmp_path / "c"
+    train(cfg, device="cpu", checkpoint_dir=ckpt_dir)
+    load_checkpoint(ckpt_dir / "final.pt")  # must not raise
+
+
+def test_load_checkpoint_rejects_tampered_model_config(tmp_path):
+    """checkpoint_id must cover model_config, not just model_state: flipping
+    a config field (e.g. normalization) changes how the unchanged weight
+    bytes are interpreted by the model, so it must invalidate the hash too."""
+    import pytest
+
+    from maskeddiffusion.checkpoints import load_checkpoint
+
+    cfg = make_config(2)
+    ckpt_dir = tmp_path / "c"
+    train(cfg, device="cpu", checkpoint_dir=ckpt_dir)
+    path = ckpt_dir / "final.pt"
+
+    payload = torch.load(path, map_location="cpu", weights_only=False)
+    assert payload["model_config"]["normalization"] == "explicit_sqrt_n"
+    payload["model_config"] = {**payload["model_config"], "normalization": "none"}
+    torch.save(payload, path)  # weights and checkpoint_id untouched: only config changed
+
+    with pytest.raises(ValueError, match="checkpoint_id"):
+        load_checkpoint(path)
+
+
+def test_load_checkpoint_rejects_tampered_config_dict(tmp_path):
+    """checkpoint_id must cover the full recorded `config` (RunConfig.to_dict()),
+    not just model_config: maskeddiffusion-evaluate reconstructs the training
+    set it scores against from this checkpoint's own config (train_size,
+    train_data_seed), so a weight-preserving edit there (e.g. swapping in a
+    different train_data_seed) must also invalidate the checkpoint's identity."""
+    import pytest
+
+    from maskeddiffusion.checkpoints import load_checkpoint
+
+    cfg = make_config(2)
+    ckpt_dir = tmp_path / "c"
+    train(cfg, device="cpu", checkpoint_dir=ckpt_dir)
+    path = ckpt_dir / "final.pt"
+
+    payload = torch.load(path, map_location="cpu", weights_only=False)
+    payload["config"] = {
+        **payload["config"],
+        "seeds": {**payload["config"]["seeds"], "train_data_seed": 999999},
+    }
+    torch.save(payload, path)  # weights, model_config, and checkpoint_id untouched
+
+    with pytest.raises(ValueError, match="checkpoint_id"):
+        load_checkpoint(path)
+
+
+def test_load_checkpoint_rejects_tampering_with_any_checkpoint_byte(tmp_path):
+    """Any field checkpoint_identity hashes over (model_state, model_config,
+    config, teacher_id, step, examples_seen) must be tamper-evident, not
+    just model_state weights."""
+    import pytest
+
+    from maskeddiffusion.checkpoints import load_checkpoint
+
+    cfg = make_config(2)
+    ckpt_dir = tmp_path / "c"
+    train(cfg, device="cpu", checkpoint_dir=ckpt_dir)
+    path = ckpt_dir / "final.pt"
+    original = torch.load(path, map_location="cpu", weights_only=False)
+
+    for mutate in (
+        lambda p: p.__setitem__("teacher_id", "not-" + p["teacher_id"]),
+        lambda p: p.__setitem__("step", p["step"] + 1),
+        lambda p: p.__setitem__("examples_seen", p["examples_seen"] + 1),
+    ):
+        payload = {**original, "model_state": dict(original["model_state"])}
+        mutate(payload)
+        torch.save(payload, path)  # checkpoint_id left as the original value
+        with pytest.raises(ValueError, match="checkpoint_id"):
+            load_checkpoint(path)

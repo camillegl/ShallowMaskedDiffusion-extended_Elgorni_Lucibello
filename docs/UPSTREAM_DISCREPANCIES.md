@@ -221,3 +221,43 @@ References are at commit `2e2db70`.
 - **Type.** Engineering (test infrastructure/tolerance only — no scientific claim, MMD
   implementation, or protected artifact was touched). **Status.** Resolved (Phase 3,
   `guthlac`): see `docs/MMD_NOTEBOOK_PROVENANCE.md`'s "Cross-platform tolerance" note.
+
+## D16 — `1/t` inverse-time weighting could produce NaN loss/gradients at t=0
+
+- **Evidence.** `continuous_time_masked_bce` and `continuous_time_masked_bce_from_batch`
+  (`objectives.py`) computed `weight = (1.0 / t)` directly. `t ~ U(min_time, 1)` per
+  sequence via `torch.rand`, whose range is `[0, 1)` — `t` can draw exactly `0.0` even at
+  the documented default `min_time=0.0`. When it does, `bernoulli_mask(x, t, ...)` masks
+  every coordinate in that row with probability 0, so `batch.is_masked` is all-`False` for
+  that row — the row's intended loss contribution is exactly 0. But
+  `weighted = losses * weight_per_position * is_masked_as_float` then computes
+  `finite * inf * 0`, which IEEE-754 defines as `NaN`, not `0`, corrupting that row (and,
+  via the batch-summed `total` loss and its `.backward()`, the entire training step's loss
+  and gradient) instead of contributing nothing.
+- **Consequence.** A training run using the default `min_time=0.0` could hit a silent NaN
+  loss/gradient at any step, with probability approximately `batch_size / 2^23` per step
+  for float32 (`torch.rand`'s float32 granularity), for the entire duration of any training
+  run — including, eventually, any run in a future full experiment grid (item 5 of the
+  Phase 4 request) if left unfixed, since NaN propagation through `AdamW` corrupts all
+  subsequent steps, not just the one that drew it.
+- **Resolution.** Added `_safe_inverse_time(t)` (`objectives.py`), which maps `t == 0`
+  exactly to a weight of `0` (via `torch.where`) and leaves `1.0 / t` untouched — to full
+  floating-point precision — for every `t > 0`, in both call sites. This makes the
+  degenerate row's contribution exactly `0` by construction rather than relying on
+  `finite * huge * 0` evaluating to `0`, and — unlike an earlier `clamp_min(eps)` version
+  of this fix — has **zero effect on any positive `t`, including values much smaller than
+  `eps`**, since the estimator is never evaluated at those; `continuous_time_masked_bce_from_batch`
+  additionally rejects any pre-built batch with a masked coordinate in a `t == 0` row, since
+  that combination is inconsistent with the estimator's definition. Verified by the full
+  existing test suite passing unchanged plus regression tests
+  (`tests/unit/test_objectives.py::test_finite_at_t_equals_zero_from_batch`,
+  `::test_finite_at_t_equals_zero_end_to_end_with_gradient`,
+  `::test_inverse_time_weight_exact_for_small_positive_t`, and
+  `::test_from_batch_rejects_masked_coordinate_at_t_equals_zero`).
+- **Type.** Engineering (numerical robustness; the objective's mathematical definition —
+  `L = (1/(N·B)) Σ (1/t)·BCE`, `t ~ U(min_time, 1)` — is unchanged; only its floating-point
+  evaluation at a measure-zero edge case is corrected). **Status.** Resolved (Phase 4B,
+  `guthlac`); `min_time` bounds (`0 <= min_time < 1`) are separately enforced at config
+  construction (`TrainingConfig.__post_init__`), which prevents `min_time` itself from
+  causing this, but does not prevent the `t=0` draw at `min_time=0.0` that this fix
+  addresses.

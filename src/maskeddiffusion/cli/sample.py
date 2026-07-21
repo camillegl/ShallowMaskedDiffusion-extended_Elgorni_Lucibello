@@ -12,7 +12,7 @@ from pathlib import Path
 
 import torch
 
-from ..artifacts import RunArtifact
+from ..artifacts import RunArtifact, sha256_file
 from ..checkpoints import load_checkpoint
 from ..config import load_config
 from ..models import LinearMaskedScore, LinearScoreConfig
@@ -54,12 +54,17 @@ def main(argv: list[str] | None = None) -> int:
     model = model.to(device).eval()
 
     with torch.no_grad():
+        # order/token generators must live on the model's device: samplers.sample()
+        # fills tensors directly on `device` (torch.rand(..., generator=g, device=d)
+        # requires g.device == d, unlike the CPU-resident data-generation streams
+        # in training.py which are deliberately kept on cpu and only the resulting
+        # *tensor* is moved).
         result = run_sampler(
             model,
             config.sampler,
             args.n_samples,
-            order_generator=config.seeds.generator("sampler_order_seed"),
-            token_generator=config.seeds.generator("sampler_token_seed"),
+            order_generator=config.seeds.generator("sampler_order_seed", device=device),
+            token_generator=config.seeds.generator("sampler_token_seed", device=device),
         )
 
     artifact = RunArtifact(out)
@@ -80,6 +85,21 @@ def main(argv: list[str] | None = None) -> int:
         objective={"name": "n/a (sampling run)"},
         model=payload["model_config"],
         input_paths=[str(args.checkpoint)],
+        extra={
+            # Lets a downstream evaluate run verify it is scoring samples
+            # produced from *this exact* checkpoint content, not merely one
+            # at the same path (docs/RESEARCH_SPEC.md provenance discipline).
+            # checkpoint_id is a semantic hash (weights + model_config +
+            # teacher/step/examples_seen, see checkpoints.py); recording the
+            # raw file's own sha256 alongside it additionally lets evaluate
+            # detect *any* byte-level change to the checkpoint file — including
+            # ones the semantic hash does not cover (e.g. optimizer_state,
+            # generator_states, package_version, git metadata) — without
+            # having to know in advance which field was touched.
+            "checkpoint_id": payload.get("checkpoint_id"),
+            "checkpoint_path": str(args.checkpoint),
+            "checkpoint_file_sha256": sha256_file(args.checkpoint),
+        },
     )
     print(f"wrote {args.n_samples} samples to {out}")
     return 0

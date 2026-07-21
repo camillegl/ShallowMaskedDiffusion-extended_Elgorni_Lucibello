@@ -1,5 +1,13 @@
 # Phase 3 completion report
 
+**Status: MERGED.** This report was written before the merge; every "review branch" /
+"`main` is unchanged" statement below describes the state **at the time of writing**, prior
+to review. Phase 3 was subsequently merged into `main` via
+[PR #2](https://github.com/camillegl/ShallowMaskedDiffusion-extended_Elgorni_Lucibello/pull/2)
+(merge commit `c6a716f2e8915c7a01864d1658275f9305586f5`), after CI caught and a follow-up
+commit (`76e9fe5`) fixed one cross-platform test-tolerance issue — see the "Post-finalization
+addendum" section below, added after that fix, before the merge.
+
 Branch: `guthlac`. Baseline (`main`/`origin/main`): `ed42906cffd0b2b5989eb53e46f00ca6cdde4171`
 (Phase 3A). This report covers the branch-local commits from `513fe77` through
 `1d98ace` (this document's own finalization commit is separate and lands after it).

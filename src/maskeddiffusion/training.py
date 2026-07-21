@@ -158,8 +158,10 @@ def train(
                     val = continuous_time_masked_bce(
                         state.model,
                         validation_data,
-                        # metric_seed stream so validation never perturbs training RNG
-                        config.seeds.generator("metric_seed"),
+                        # metric_seed stream so validation never perturbs training RNG;
+                        # must share validation_data's device (torch requires
+                        # generator.device == tensor.device for torch.rand).
+                        config.seeds.generator("metric_seed", device=validation_data.device),
                         l2reg=0.0,
                         train_size=config.dimensions.train_size,
                         min_time=tcfg.min_time,

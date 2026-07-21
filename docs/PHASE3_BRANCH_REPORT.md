@@ -1,5 +1,13 @@
 # Phase 3 branch report
 
+**Status: MERGED.** Phase 3 (all commits described below, through `1d98ace`) was reviewed
+and merged into `main` via [PR #2](https://github.com/camillegl/ShallowMaskedDiffusion-extended_Elgorni_Lucibello/pull/2)
+(merge commit `c6a716f2e8915c7a01864d1658275f9305586f5`). Every "isolated on `guthlac`" /
+"not merged to `main`" statement below describes the state **at the time each commit was
+made**, before that merge — it is an accurate historical record of the review process, not
+a claim about current branch state. As of the merge, `guthlac` and `main` are identical at
+`c6a716f`; `guthlac` has since diverged again with Phase 4 work.
+
 Branch: `guthlac`
 
 Baseline: `ed42906cffd0b2b5989eb53e46f00ca6cdde4171` (`main` after Phase 3A).

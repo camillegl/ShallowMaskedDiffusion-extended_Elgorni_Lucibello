@@ -33,10 +33,16 @@ ALL_SAMPLERS = [
 ]
 
 
+def _tokens_per_step_for(name: str) -> int:
+    # tokens_per_step only affects parallel_* samplers; SamplerConfig now
+    # rejects a non-1 value for every other sampler as misleading provenance.
+    return 2 if "parallel" in name else 1
+
+
 @pytest.mark.parametrize("name", ALL_SAMPLERS)
 def test_termination_and_pm1(name):
     model = make_model()
-    cfg = SamplerConfig(name, tokens_per_step=2)
+    cfg = SamplerConfig(name, tokens_per_step=_tokens_per_step_for(name))
     res = sample(model, cfg, batch_size=3, **gens())
     assert ((res.values == 1.0) | (res.values == -1.0)).all()
 
@@ -44,7 +50,7 @@ def test_termination_and_pm1(name):
 @pytest.mark.parametrize("name", ALL_SAMPLERS)
 def test_no_revision_and_only_masked_change(name):
     model = make_model()
-    cfg = SamplerConfig(name, tokens_per_step=2)
+    cfg = SamplerConfig(name, tokens_per_step=_tokens_per_step_for(name))
     res = sample(model, cfg, batch_size=3, record_trajectory=True, **gens())
     for step in range(len(res.trajectory) - 1):
         before, after = res.trajectory[step], res.trajectory[step + 1]
@@ -141,3 +147,95 @@ def test_identity_records_selection_rules():
     ident2 = SamplerConfig("parallel_random_stochastic", tokens_per_step=4).identity()
     assert ident2["token_selection"] == "bernoulli_sigmoid"
     assert ident2["tokens_per_step"] == 4
+
+
+def test_rejects_unrecognized_sampler_name():
+    """An unrecognized sampler_name must raise at config construction, not
+    silently fall into the `elif name in _PARALLEL_NAMES` dispatch branch
+    in `sample()` (it previously used a bare `else: # parallel_*`)."""
+    with pytest.raises(ValueError, match="sampler_name"):
+        SamplerConfig("sequential_random_stochstic")  # typo
+
+
+def test_rejects_bad_tokens_per_step():
+    with pytest.raises(ValueError):
+        SamplerConfig("parallel_random_stochastic", tokens_per_step=0)
+    with pytest.raises(TypeError):
+        SamplerConfig("parallel_random_stochastic", tokens_per_step=1.5)
+
+
+def test_rejects_bad_temperature():
+    with pytest.raises(ValueError):
+        SamplerConfig("sequential_random_stochastic", temperature=0.0)
+    with pytest.raises(ValueError):
+        SamplerConfig("sequential_random_stochastic", temperature=-1.0)
+    with pytest.raises(ValueError):
+        SamplerConfig("sequential_random_stochastic", temperature=float("nan"))
+
+
+def test_nonunit_temperature_is_accepted_not_silently_rejected():
+    """Non-unit temperature is a deliberate new sampler identity (see module
+    docstring), not a malformed config; it must not be rejected."""
+    cfg = SamplerConfig("sequential_random_stochastic", temperature=0.5)
+    assert cfg.temperature == 0.5
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "sequential_random_stochastic",
+        "sequential_random_greedy",
+        "sequential_confidence_greedy",
+        "one_shot_stochastic",
+        "one_shot_greedy",
+    ],
+)
+def test_rejects_ineffective_tokens_per_step(name):
+    """tokens_per_step only affects parallel_* samplers; a non-1 value for
+    any other sampler was previously silently ignored and recorded verbatim
+    in the run manifest, misrepresenting provenance."""
+    with pytest.raises(ValueError, match="tokens_per_step"):
+        SamplerConfig(name, tokens_per_step=2)
+
+
+@pytest.mark.parametrize(
+    "name", ["sequential_random_greedy", "sequential_confidence_greedy", "one_shot_greedy"]
+)
+def test_rejects_ineffective_temperature_for_greedy(name):
+    """Greedy decoding (`logits >= 0`) never reads temperature; a non-unit
+    value was previously silently ignored and recorded verbatim in the run
+    manifest, misrepresenting provenance."""
+    with pytest.raises(ValueError, match="temperature"):
+        SamplerConfig(name, temperature=0.5)
+
+
+def test_parallel_sampler_accepts_tokens_per_step():
+    cfg = SamplerConfig("parallel_random_stochastic", tokens_per_step=3)
+    assert cfg.tokens_per_step == 3
+
+
+def test_stochastic_sampler_accepts_nonunit_temperature():
+    cfg = SamplerConfig("sequential_random_stochastic", temperature=0.5)
+    assert cfg.temperature == 0.5
+
+
+@pytest.mark.skipif(
+    not (torch.cuda.is_available() or torch.backends.mps.is_available()),
+    reason="requires a non-cpu device to construct a genuinely mismatched generator",
+)
+def test_generator_device_mismatch_raises_clear_error():
+    """torch.rand(..., generator=g, device=d) requires g.device == d; sample()
+    must raise a clear, actionable error before doing any tensor op, instead
+    of torch's own less-clear RuntimeError from deep inside the sampling loop."""
+    model = make_model()  # cpu
+    other_device = "cuda" if torch.cuda.is_available() else "mps"
+    mismatched_generator = torch.Generator(device=other_device).manual_seed(0)
+    cfg = SamplerConfig("sequential_random_stochastic")
+    with pytest.raises(ValueError, match="device"):
+        sample(
+            model,
+            cfg,
+            batch_size=1,
+            order_generator=mismatched_generator,
+            token_generator=torch.Generator().manual_seed(0),
+        )
