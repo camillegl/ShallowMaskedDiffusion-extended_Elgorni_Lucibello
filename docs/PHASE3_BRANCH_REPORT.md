@@ -46,7 +46,9 @@ The following destructive steps remain separate, not-yet-started commits:
    follow-up commit; pending review (this document) and merge decision.
 2. ~~obsolete Julia inventory and retirement~~ — **done**, in "chore: retire
    obsolete Julia implementations"; see `docs/archive/JULIA_LEGACY_ARCHIVE.md`.
-3. historical notebook and utility retirement;
+3. ~~historical notebook and utility retirement~~ — **done**, in "chore:
+   retire historical analysis notebooks"; see
+   `docs/archive/HISTORICAL_NOTEBOOKS_ARCHIVE.md`.
 4. non-protected result cleanup;
 5. `train.py` and dependency retirement;
 6. CI and final repository hardening.

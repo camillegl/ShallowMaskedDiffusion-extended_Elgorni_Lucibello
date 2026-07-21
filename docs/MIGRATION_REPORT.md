@@ -31,10 +31,12 @@ behavior as fixtures and protecting the final-run MMD notebooks.
 | `models.py` | **kept** (superseded, frozen) | imported by `diffusion.py` |
 | `datasets.py` | **kept** (superseded, frozen) | imported by the protected corrected notebook |
 | `train.py` | **kept** (superseded, deprecated in help text) | legacy CLI for reproducing historical runs; `--alpha` help now states the M/N convention and points to `maskeddiffusion-train` |
-| `experiments-analysis/utils.py`, `run_uturn_experiments.py` | kept | used by historical (non-protected) notebooks |
+| `experiments-analysis/utils.py`, `run_uturn_experiments.py` | **deleted on `guthlac`** (Phase 3D, see below) | historical (non-protected) notebook consumers were also retired |
 
-No legacy module was deleted: the protected notebooks' importability outranks
-cleanup (stop-condition compliance).
+No legacy module was deleted at Phase 3A: the protected notebooks'
+importability outranks cleanup (stop-condition compliance). `utils.py` and
+`run_uturn_experiments.py` were later retired on `guthlac` (not Phase 3A;
+not `main`) once their only consumers (historical notebooks) were retired.
 
 ## Edits to legacy files (behavior-preserving, sanctioned)
 
@@ -136,6 +138,24 @@ yet extracted)
 - Full per-file inventory (size, blob, SHA-256, scientific/engineering role)
   recorded in `docs/archive/JULIA_LEGACY_ARCHIVE.md` before deletion.
 - Phase 3C exists only on `guthlac`; `main` is unaffected.
+
+## Phase 3D — historical analysis notebooks and utilities (isolated on `guthlac`)
+
+- Commit "chore: retire historical analysis notebooks": deleted six
+  non-protected exploratory notebooks (`analysis.ipynb`, `analysis-J.ipynb`,
+  `analysis-mnist.ipynb`, `analysis-uturn.ipynb`,
+  `analysis_loss_convergence.ipynb`, `analysis_mmd_distribution_distance.ipynb`)
+  and their two shared utilities (`utils.py`, `run_uturn_experiments.py`).
+  The two protected notebooks
+  (`analysis_mmd_distribution_distance_corrected.ipynb`,
+  `mmd_results_presentation_1.ipynb`) are untouched.
+- Full per-file inventory (size, blob, SHA-256, purpose, consumers) recorded
+  in `docs/archive/HISTORICAL_NOTEBOOKS_ARCHIVE.md` before deletion.
+- Updated `docs/EQUATION_TO_CODE_MAP.md` and `docs/ORIGINAL_ARCHITECTURE.md`
+  to drop the now-stale line-number citation of the deleted
+  `run_uturn_experiments.py` driver script; the underlying mechanism it
+  drove (`diffusion.py:119-126` `test_step`) is unaffected and unchanged.
+- Phase 3D exists only on `guthlac`; `main` is unaffected.
 
 ## Dependencies removed
 

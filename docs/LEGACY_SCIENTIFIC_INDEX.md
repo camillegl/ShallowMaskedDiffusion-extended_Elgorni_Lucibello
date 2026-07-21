@@ -96,27 +96,37 @@ Julia implementations"). **Only on `guthlac` — `main` is unaffected.**
 - **Recovery**: `git show phase2-hidden-manifold-foundation:julia-code/old/<file>`
   or `git show ed42906cffd0b2b5989eb53e46f00ca6cdde4171:julia-code/old/<file>`.
 
-## Historical analysis notebooks
+## Historical analysis notebooks and utilities (retired)
+
+**Status: deleted from the `guthlac` branch** (commit "chore: retire
+historical analysis notebooks"). **Only on `guthlac` — `main` is
+unaffected.**
 
 `experiments-analysis/analysis.ipynb`, `analysis-J.ipynb`, `analysis-mnist.ipynb`,
-`analysis-uturn.ipynb`, `analysis_loss_convergence.ipynb`, and
+`analysis-uturn.ipynb`, `analysis_loss_convergence.ipynb`,
 `analysis_mmd_distribution_distance.ipynb` (superseded by the protected
-`analysis_mmd_distribution_distance_corrected.ipynb`).
+`analysis_mmd_distribution_distance_corrected.ipynb`), plus utilities
+`experiments-analysis/utils.py` and `experiments-analysis/run_uturn_experiments.py`.
 
 - **Purpose**: historical exploratory reports — uniform-data training curves,
-  U-turn experiments, MNIST runs, and the pre-correction MMD study.
+  U-turn experiments, MNIST runs, and the pre-correction MMD study — plus
+  their shared checkpoint-loading/U-turn-batch-runner utilities.
 - **Unique scientific content**: historical evidence with embedded outputs;
   `analysis_mmd_distribution_distance.ipynb` in particular is superseded
   content and must never be quoted as a current result (see
-  `.claude/rules/notebooks.md`).
-- **Planned retirement phase**: a future "notebook retirement" phase (not
-  Phase 3A).
+  `.claude/rules/notebooks.md`). Full per-file inventory (size, blob,
+  SHA-256, purpose, consumers) in
+  `docs/archive/HISTORICAL_NOTEBOOKS_ARCHIVE.md`.
 - **Replacement / retained source**: the two protected notebooks
   (`analysis_mmd_distribution_distance_corrected.ipynb`,
   `mmd_results_presentation_1.ipynb`) are the current authoritative and
   presentation records respectively; these historical notebooks are not
-  replaced, only superseded as reports.
-- **Recovery**: `git show phase2-hidden-manifold-foundation:experiments-analysis/<name>.ipynb`.
+  replaced, only superseded as reports. The U-turn mechanism itself
+  (`diffusion.py:119-126` `test_step`) is retained; only the batch-driver
+  script is retired — see `docs/EQUATION_TO_CODE_MAP.md`,
+  `docs/ORIGINAL_ARCHITECTURE.md`.
+- **Recovery**: `git show phase2-hidden-manifold-foundation:experiments-analysis/<name>`
+  or `git show ed42906cffd0b2b5989eb53e46f00ca6cdde4171:experiments-analysis/<name>`.
 
 ## Legacy result tables and figures
 

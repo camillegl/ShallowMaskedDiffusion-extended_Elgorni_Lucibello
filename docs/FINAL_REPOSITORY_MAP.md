@@ -83,11 +83,12 @@ forward.
 - **`julia-code/SP/` and `julia-code/old/`**: archived and (on `guthlac`
   only) deleted; see `docs/archive/JULIA_LEGACY_ARCHIVE.md`. Not superseded
   by `julia-code/hiddenmanifold/`, which is retained and unaffected.
-- **Historical, non-protected notebooks and utilities** (e.g. `analysis.ipynb`,
+- **Historical, non-protected notebooks and utilities** (`analysis.ipynb`,
   `analysis-J.ipynb`, `analysis-mnist.ipynb`, `analysis-uturn.ipynb`,
-  `analysis_loss_convergence.ipynb`, `analysis_mmd_distribution_distance.ipynb`):
-  pending exact inventory and archival; its exact disposition (deletion vs.
-  relocation vs. permanent archival) is deferred and not decided here.
+  `analysis_loss_convergence.ipynb`, `analysis_mmd_distribution_distance.ipynb`,
+  `utils.py`, `run_uturn_experiments.py`): archived and (on `guthlac` only)
+  deleted; see `docs/archive/HISTORICAL_NOTEBOOKS_ARCHIVE.md`. The two
+  protected notebooks are unaffected.
 - **`train.py`**: deprecated, non-protected legacy CLI, not hash-pinned; its
   retirement is deferred until its historical consumers (old scripts,
   superseded notebooks) are also retired (see `docs/FROZEN_LEGACY_RUNTIME.md`).

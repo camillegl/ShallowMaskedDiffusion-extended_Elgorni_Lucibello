@@ -16,7 +16,7 @@ Discrepancy IDs refer to `docs/UPSTREAM_DISCREPANCIES.md`.
 | L2 with replica scaling `−½βλ‖w‖²`, M-scaled loss | notes-mem:182 | `diffusion.py:36,46,56-60` `l2coeff`, `sqnorm` | `0.5·λ/(L·α_legacy)·Σ_all-params p²` (includes frozen params) | — | D6 (frozen params regularized) |
 | Sampler Algorithm 1: k tokens/step, uniform positions, sample p_θ | notes-mem:137-153 | `diffusion.py:147-231` `sample`, `_sample_k_update` | Fair only; monotone; no revision | sampler module | — |
 | Greedy / verygreedy / one-shot reconstruction | not in notes (code-only) | `diffusion.py:233-298` `mask_and_sample`; `:300-379` `mask_and_sample_oneshot` | Threshold decodings; confidence ordering; single-pass reveal | sampler module | code-only extensions |
-| U-turn retrieval experiment | notes-mem (U-turn discussion) | `run_uturn_experiments.py:185-191`; `diffusion.py:119-126` `test_step` | Mask fraction t0 of training datum, reconstruct, overlap | — | — |
+| U-turn retrieval experiment | notes-mem (U-turn discussion) | `diffusion.py:119-126` `test_step` (driver script `experiments-analysis/run_uturn_experiments.py` retired on `guthlac`, see `docs/archive/HISTORICAL_NOTEBOOKS_ARCHIVE.md`) | Mask fraction t0 of training datum, reconstruct, overlap | — | — |
 | Mean-field accuracy ODE (correlations neglected) | notes-mem:702 | not implemented in Python | — | — | theory-only |
 | Teacher `F_ia~N(0,1/D)`, `x=sign(Fz)` | notes-hm:43,56,443-444; NB-corr MD cell 2 | `datasets.py:39-53` `RandomFeaturesDataset` | `F=randn(N,D)/√D`, `data=sign(z@Fᵀ)` | — | **D8** (`sign(0)` unpatched in datasets.py) |
 | `sign(0) := +1` convention | NB-corr ("Resolve sign ambiguity") | NB-corr cells only (`x[x==0]=1`) | Notebook-only patch | dataset module | **D8** |
