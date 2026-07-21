@@ -49,7 +49,8 @@ The following destructive steps remain separate, not-yet-started commits:
 3. ~~historical notebook and utility retirement~~ — **done**, in "chore:
    retire historical analysis notebooks"; see
    `docs/archive/HISTORICAL_NOTEBOOKS_ARCHIVE.md`.
-4. non-protected result cleanup;
+4. ~~non-protected result cleanup~~ — **done**, in "chore: remove superseded
+   result artifacts"; see `docs/archive/LEGACY_RESULTS_ARCHIVE.md`.
 5. `train.py` and dependency retirement;
 6. CI and final repository hardening.
 

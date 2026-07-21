@@ -92,14 +92,16 @@ forward.
 - **`train.py`**: deprecated, non-protected legacy CLI, not hash-pinned; its
   retirement is deferred until its historical consumers (old scripts,
   superseded notebooks) are also retired (see `docs/FROZEN_LEGACY_RUNTIME.md`).
-- **`paper/bibliography.bib`**: its fate is **not finalized** by this map. It
-  is marked here for later comparison against `notes/bibliography.bib` (which
-  of the two, if either, is canonical, and whether they should be merged) —
-  a decision explicitly deferred.
-- **`experiments-analysis/figures/`** (the 20 PNG outputs of the corrected
-  notebook): not listed above; its retention or archival is bundled with the
-  future "result retirement" phase in `docs/LEGACY_SCIENTIFIC_INDEX.md`, not
-  decided here.
+- **`paper/bibliography.bib`**: reconciled against `notes/bibliography.bib`
+  and deleted (on `guthlac` only) — every key it contained was already
+  present in `notes/bibliography.bib`, so no merge was needed. See
+  `docs/archive/LEGACY_RESULTS_ARCHIVE.md` for the key-set comparison.
+- **`experiments-analysis/figures/`, root/`experiments-analysis` result
+  CSVs**: reviewed against the protected notebooks; three orphaned figures
+  and four orphaned result tables (sole consumers were notebooks retired in
+  Phase 3D) deleted on `guthlac`; five figures and 18 `res-exp-*.csv` files
+  retained as ambiguous. See `docs/archive/LEGACY_RESULTS_ARCHIVE.md` for the
+  full breakdown.
 
 ## Recovery
 

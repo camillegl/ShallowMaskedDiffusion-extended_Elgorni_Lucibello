@@ -157,6 +157,28 @@ yet extracted)
   drove (`diffusion.py:119-126` `test_step`) is unaffected and unchanged.
 - Phase 3D exists only on `guthlac`; `main` is unaffected.
 
+## Phase 3E — superseded result artifacts and bibliography reconciliation (isolated on `guthlac`)
+
+- Commit "chore: remove superseded result artifacts": deleted four orphaned
+  result tables (`experiments.csv` at root and in `experiments-analysis/`,
+  `experiments-analysis/results_mmd_distribution_distance.csv`, and
+  `experiments-analysis/results/results_mmd_distribution_distance.csv`) whose
+  sole consumers were the notebooks retired in Phase 3D, and three figures
+  (`fig_mmd_vs_alpha_D_sweep.png`, `fig_mmd_vs_alpha_lambdas.png`,
+  `fig_mmd_vs_alpha_multiscale.png`) confirmed produced only by the deleted
+  uncorrected MMD notebook, not the protected corrected one.
+- Reconciled `paper/bibliography.bib` against `notes/bibliography.bib`:
+  every key in the paper copy was already present in the notes copy (no
+  merge required), so the paper copy was deleted.
+- Five figures and 18 `res-exp-*.csv` files were reviewed and **retained**
+  because their producer/consumer status could not be established with
+  confidence; `notes/plots/` and `paper/plots/` were retained wholesale as
+  out of scope for this pass. Full accounting in
+  `docs/archive/LEGACY_RESULTS_ARCHIVE.md`.
+- No protected artifact (the three `results/*_corrected*.csv` files, the two
+  protected notebooks) was touched.
+- Phase 3E exists only on `guthlac`; `main` is unaffected.
+
 ## Dependencies removed
 
 - `hydra-core` (never imported anywhere — verified by grep over all .py and
