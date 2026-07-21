@@ -14,7 +14,9 @@ Validate the current working-tree changes. Never commit, stage, or revert anythi
 2. **Run only checks verified to exist.** Currently verified in this repo:
    - `uv run python -c "import diffusion, models, datasets"` (cheap import check, run from
      repo root);
-   - `uv run python train.py --help` (CLI intact).
+   - `uv run python train.py --help` (CLI intact) — **on `main` only**; `train.py` was
+     retired on the `guthlac` branch (see `docs/MIGRATION_REPORT.md`'s Phase 3F section),
+     skip this check there.
    There is no test suite or CI as of the 2026-07-20 audit — do not invent test commands;
    if tests have since been added, run only ones that finish in seconds on CPU.
 3. **Docs/implementation consistency.** If scientific code changed, check the affected rows

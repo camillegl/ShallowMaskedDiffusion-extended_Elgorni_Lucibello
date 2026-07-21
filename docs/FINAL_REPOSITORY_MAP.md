@@ -3,12 +3,27 @@
 This document describes the **intended** shape of the repository after all
 planned retirement phases (Hopfield, DMFT, Julia, notebook, result, and
 dependency retirement) are complete. It is a target, not a status report:
-none of those retirement phases have run yet, and this document does not
-claim they have. Phase 3A (this change) performs only the narrow deletions
-listed in the accompanying Phase 3A instructions; it does not begin any of the
-retirement phases named above. Reaching the shape below in no way validates
-`src/maskeddiffusion/` — validation is a separate, ongoing activity carried
-out by the test suite and reviewers, not a side effect of deleting old files.
+it does not claim every retirement step has already run. Reaching the shape
+below in no way validates `src/maskeddiffusion/` — validation is a separate,
+ongoing activity carried out by the test suite and reviewers, not a side
+effect of deleting old files.
+
+**Phase 3A is complete**, committed at `ed42906cffd0b2b5989eb53e46f00ca6cdde4171`
+on `main`/`origin/main` — it performed only the narrow deletions listed in
+the Phase 3A instructions (obsolete stubs and legacy cluster scripts) and
+begins none of the retirement phases named above. **Phase 3B (Hopfield/DMFT
+archival and retirement) is isolated on the `guthlac` branch and is not
+merged to `main`** — two commits there
+(`513fe7755d9dd65718da6b7720264033a0fd61a3` archival,
+`177fd8f84b0b02b799be057259ff74318c8761d7` retirement) removed the
+Hopfield/DMFT side study from that branch's working tree; see
+`docs/archive/HOPFIELD_DMFT_ARCHIVE.md` and
+`docs/archive/HOPFIELD_DMFT_RETIREMENT.md`. Julia retirement, historical-
+notebook retirement, non-protected result cleanup, legacy-CLI (`train.py`)
+retirement, dependency reduction, and CI hardening have since all been
+completed on `guthlac` as separate, reviewable commits (see
+`docs/PHASE3_BRANCH_REPORT.md` for the full commit list); none is merged to
+`main`.
 
 ## Retained paths
 
@@ -59,29 +74,45 @@ in this target map reflects that the protected corrected MMD notebook depends
 on them for re-runnability, not that they are maintained or extended going
 forward.
 
-## What this map does not cover
+## What this map does not cover / pending retirement categories
 
-- **Everything not listed above and not explicitly named in
-  `docs/LEGACY_SCIENTIFIC_INDEX.md`** (e.g. `src-hopfield/`, `notes/notes_hopfield.typ`,
-  `notes/notes_dmft_masked_hopfield.typ`, `julia-code/SP/`, `julia-code/old/`,
-  the historical analysis notebooks, and non-protected result tables/figures)
-  is scheduled for retirement in a later phase. Its exact disposition
-  (deletion vs. relocation vs. permanent archival) is deferred to that phase
-  and is not decided here.
-- **`train.py`** is not listed above and its fate is likewise deferred; it is
-  a legacy CLI, not a hash-pinned protected file (see
-  `docs/FROZEN_LEGACY_RUNTIME.md`), and Phase 3A makes no claim about it.
-- **`paper/bibliography.bib`** — its fate is **not finalized** by this map. It
-  is marked here for later comparison against `notes/bibliography.bib` (which
-  of the two, if either, is canonical, and whether they should be merged) —
-  a decision explicitly deferred, not made in Phase 3A.
-- **`experiments-analysis/figures/`** (the 20 PNG outputs of the corrected
-  notebook) is not listed above; its retention or archival is bundled with
-  the future "result retirement" phase in `docs/LEGACY_SCIENTIFIC_INDEX.md`,
-  not decided here.
+- **Hopfield/DMFT sources, notes, data, and figures**: archived and (on
+  `guthlac` only) fully deleted, including the initially-missed residual
+  files; see `docs/archive/HOPFIELD_DMFT_ARCHIVE.md` and
+  `docs/archive/HOPFIELD_DMFT_RETIREMENT.md`. Merging this retirement into
+  `main` requires a distinct, separately reviewed change — it is not decided
+  here.
+- **`julia-code/SP/` and `julia-code/old/`**: archived and (on `guthlac`
+  only) deleted; see `docs/archive/JULIA_LEGACY_ARCHIVE.md`. Not superseded
+  by `julia-code/hiddenmanifold/`, which is retained and unaffected.
+- **Historical, non-protected notebooks and utilities** (`analysis.ipynb`,
+  `analysis-J.ipynb`, `analysis-mnist.ipynb`, `analysis-uturn.ipynb`,
+  `analysis_loss_convergence.ipynb`, `analysis_mmd_distribution_distance.ipynb`,
+  `utils.py`, `run_uturn_experiments.py`): archived and (on `guthlac` only)
+  deleted; see `docs/archive/HISTORICAL_NOTEBOOKS_ARCHIVE.md`. The two
+  protected notebooks are unaffected.
+- **`train.py`**: deprecated, non-protected legacy CLI, not hash-pinned;
+  deleted on `guthlac` once its historical consumers (old Julia scripts,
+  superseded notebooks) were also retired (see
+  `docs/FROZEN_LEGACY_RUNTIME.md`, `docs/MIGRATION_REPORT.md`'s Phase 3F
+  section). `scipy`, `numba`, `tensorboard` removed from `pyproject.toml`/
+  `uv.lock` as no-longer-imported; `jupyterlab` moved to the optional
+  `analysis` dependency group.
+- **`paper/bibliography.bib`**: reconciled against `notes/bibliography.bib`
+  and deleted (on `guthlac` only) — every key it contained was already
+  present in `notes/bibliography.bib`, so no merge was needed. See
+  `docs/archive/LEGACY_RESULTS_ARCHIVE.md` for the key-set comparison.
+- **`experiments-analysis/figures/`, root/`experiments-analysis` result
+  CSVs**: reviewed against the protected notebooks; three orphaned figures
+  and four orphaned result tables (sole consumers were notebooks retired in
+  Phase 3D) deleted on `guthlac`; five figures and 18 `res-exp-*.csv` files
+  retained as ambiguous. See `docs/archive/LEGACY_RESULTS_ARCHIVE.md` for the
+  full breakdown.
 
 ## Recovery
 
-Anything removed in a future retirement phase remains recoverable from the
-`phase2-hidden-manifold-foundation` tag or from `main` history prior to that
-phase's commit(s), per `docs/LEGACY_SCIENTIFIC_INDEX.md`.
+Anything removed in a completed or future retirement phase remains
+recoverable from the `phase2-hidden-manifold-foundation` tag, from the
+Phase 3A baseline `ed42906cffd0b2b5989eb53e46f00ca6cdde4171`, or from
+subsequent branch history (e.g. `guthlac`'s pre-retirement commits), per
+`docs/LEGACY_SCIENTIFIC_INDEX.md`.

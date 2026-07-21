@@ -145,7 +145,7 @@
     "mmd_biased_mixture": 0.6281389066475718
   },
   "tolerance": {
-    "rel": 1e-06,
-    "abs": 1e-09
+    "rel": 5e-06,
+    "abs": 1e-07
   }
 }

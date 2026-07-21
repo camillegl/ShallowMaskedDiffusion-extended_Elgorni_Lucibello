@@ -49,10 +49,11 @@ Python-3.11 claim is wrong); where it conflicts with `docs/`, `docs/` wins.
   PyTorch loop — see `docs/adr/`). Legacy flat modules `diffusion.py`, `models.py`, and
   `datasets.py` are frozen compatibility modules required by the protected corrected MMD
   notebook (`docs/REFERENCE_RESULTS_MANIFEST.md`, `docs/FROZEN_LEGACY_RUNTIME.md`) and must
-  stay importable. `train.py` is a separate, deprecated historical CLI: it is **not**
-  hash-pinned and is **not** a protected-notebook dependency; it is scheduled for later
-  retirement once the old cluster scripts and superseded notebooks are removed (see
-  `docs/LEGACY_SCIENTIFIC_INDEX.md`).
+  stay importable. `train.py` was a separate, deprecated historical CLI, never hash-pinned
+  and never a protected-notebook dependency; on the `guthlac` branch it has been retired
+  (deleted) now that the old Julia scripts and superseded notebooks that depended on it are
+  also retired (see `docs/archive/JULIA_LEGACY_ARCHIVE.md`,
+  `docs/archive/HISTORICAL_NOTEBOOKS_ARCHIVE.md`). It remains present on `main`.
 - Protected artifacts (never modify/rerun/strip):
   `experiments-analysis/analysis_mmd_distribution_distance_corrected.ipynb`,
   `experiments-analysis/mmd_results_presentation_1.ipynb`, and the result CSVs pinned in
@@ -70,8 +71,12 @@ Python-3.11 claim is wrong); where it conflicts with `docs/`, `docs/` wins.
 - `scripts/validate_reference_artifacts.sh` — verify protected-artifact hashes.
 - `uv run maskeddiffusion-train --help` (likewise `-sample`, `-evaluate`,
   `-validate-artifact`).
-- `uv run python train.py --help` — legacy CLI; `--alpha` there means M/L; model strings
-  use underscores (`rfs10_tanh`).
+- `uv run python train.py --help` — legacy CLI on `main`; `--alpha` there means M/L; model
+  strings use underscores (`rfs10_tanh`). Not available on `guthlac`, where `train.py` was
+  retired (see `docs/MIGRATION_REPORT.md`'s Phase 3F section).
+- `.github/workflows/ci.yml` (`guthlac` only, not yet on `main`) runs the equivalent of the
+  commands above plus the four CLI `--help` checks and `git diff --check`, on every
+  push/PR to `main` and `guthlac`.
 
 ## Forbidden actions
 

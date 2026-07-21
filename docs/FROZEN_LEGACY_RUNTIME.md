@@ -1,8 +1,9 @@
 # Frozen legacy runtime
 
-Status as of Phase 3A (2026-07-21), uncommitted until this change is actually
-committed. This document records the operating rules for the three legacy flat
-modules that remain in the repository root: `datasets.py`, `diffusion.py`, and
+Status as of Phase 3A, committed and pushed at
+`ed42906cffd0b2b5989eb53e46f00ca6cdde4171` on `main`/`origin/main`. This
+document records the operating rules for the three legacy flat modules that
+remain in the repository root: `datasets.py`, `diffusion.py`, and
 `models.py`.
 
 ## What these files are
@@ -17,10 +18,13 @@ in turn imports `models.py`. As long as that notebook is preserved and
 required to remain re-runnable, these three modules must remain importable
 from the repository root.
 
-`train.py` is a separate, non-protected legacy CLI. It is **not** hash-pinned
-or listed in `artifacts/reference/mmd_final_run/manifest.json`, and this
-document makes no protection claim about it. `train.py` is a deprecated
-reproduction tool for historical runs, not a frozen compatibility file.
+`train.py` was a separate, non-protected legacy CLI. It was never
+hash-pinned or listed in `artifacts/reference/mmd_final_run/manifest.json`,
+and this document made no protection claim about it. It was retired
+(deleted) on the `guthlac` branch once its historical consumers (the old
+Julia scripts and superseded historical notebooks) were also retired; it
+remains present on `main`. See `docs/archive/JULIA_LEGACY_ARCHIVE.md` and
+`docs/archive/HISTORICAL_NOTEBOOKS_ARCHIVE.md`.
 
 ## Rules
 
@@ -41,12 +45,45 @@ reproduction tool for historical runs, not a frozen compatibility file.
   content. An accidental or drive-by edit is a regression, not a maintenance
   action.
 - **Retained dependencies must not be removed while these modules remain.**
-  The Python dependencies these modules require at import/runtime (e.g. the
-  MNIST-support stack noted in `docs/MIGRATION_REPORT.md` — `torchvision`,
-  `tensorboard`, `lightning`, `numba`, `tqdm`, `pandas`, `scipy`, `matplotlib`,
-  `jupyterlab`) must stay in `pyproject.toml` / `uv.lock` for as long as these
-  modules are kept importable. Removing a dependency they need would silently
-  break the protected notebook's re-runnability.
+  Verified by direct import tracing (not by `pyproject.toml` comments), the
+  three frozen root modules require, at import/runtime:
+  - `datasets.py`: `torch`, `torchvision` (MNIST support).
+  - `diffusion.py`: `torch`, `pytorch_lightning` (`lightning`), `tqdm`.
+  - `models.py`: `torch` only.
+  These — `torch`, `torchvision`, `lightning`, `tqdm` — must stay in
+  `pyproject.toml` / `uv.lock` for as long as these modules are kept
+  importable. Removing one of them would silently break the protected
+  notebook's re-runnability.
+
+## Dependency boundaries
+
+Import tracing (grep over all tracked `.py` files and notebook source, not
+`pyproject.toml` comments) separates three categories:
+
+- **Frozen root imports** (required directly by `datasets.py`/`diffusion.py`/
+  `models.py`, see above): `torch`, `lightning` (`pytorch_lightning`),
+  `torchvision`, `tqdm`.
+- **Protected/historical analysis** (required by the protected notebooks
+  and/or retained historical analysis material, not by the frozen root
+  modules themselves): `numpy`, `pandas`, `matplotlib`.
+- **Removed (Phase 6, `guthlac` only)**: `scipy` and `numba` were used
+  exclusively by the Hopfield/DMFT side study (`scipy` by
+  `src-hopfield/hopfield_saddle_point.py`, `numba` by
+  `src-hopfield/mcmc_hopfield.py` — see `docs/archive/HOPFIELD_DMFT_ARCHIVE.md`),
+  which was retired on `guthlac` in an earlier commit; a repository-wide
+  `git grep` confirmed no remaining `.py`/`.ipynb` source imports either
+  package. `tensorboard` was imported only by the now-deleted `train.py`
+  (`pytorch_lightning.loggers.TensorBoardLogger`); a `git grep` confirmed no
+  remaining consumer. All three were removed from `pyproject.toml` and
+  `uv.lock` in "chore: retire legacy training CLI and unused dependencies".
+  All three remain present on `main`, which is unaffected.
+- **Moved to an optional dependency group**: `jupyterlab` is not an
+  importable library dependency of any frozen module or the active
+  package — it is the environment needed to open/run any notebook
+  (protected or historical). It was moved from core `dependencies` to the
+  `analysis` dependency group (`uv sync --group analysis`) in the same
+  commit; it was not deleted, since it is still required to interactively
+  open the protected notebooks.
 
 ## Verification
 
@@ -60,9 +97,11 @@ version than the current pinned environment).
 
 ## Retirement
 
-These modules are not scheduled for deletion in Phase 3A. Their eventual
-retirement (removal from the repository root, or extraction of their behavior
-into `src/maskeddiffusion/` with an updated protected-notebook dependency) is
-out of scope here; see `docs/LEGACY_SCIENTIFIC_INDEX.md` and
+These modules are not scheduled for deletion in Phase 3A or in the Phase 3B
+Hopfield/DMFT retirement on `guthlac`. Their eventual retirement (removal
+from the repository root, or extraction of their behavior into
+`src/maskeddiffusion/` with an updated protected-notebook dependency) is out
+of scope here and requires a separate decision, because the protected
+corrected notebook depends on them; see `docs/LEGACY_SCIENTIFIC_INDEX.md` and
 `docs/FINAL_REPOSITORY_MAP.md` for how they are expected to be treated in the
 post-retirement repository shape.

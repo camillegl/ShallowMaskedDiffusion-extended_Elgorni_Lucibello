@@ -71,6 +71,18 @@ within it, from `def lambda_key(...)` up to (not including) the
   fixture) computation to float32 rounding (~1e-6 relative on the tiny
   fixture; see `tests/fixtures/mmd_notebook_reference_v1/fixture.json` for
   the exact tolerance used).
+- **Cross-platform tolerance.** The fixture's tolerance (`fixture.json`'s
+  `tolerance` field, set by `generate_fixture.py`) was widened from
+  `rel=1e-6, abs=1e-9` to `rel=5e-6, abs=1e-7` after CI (added later than
+  this fixture) exposed a genuine float32 CPU reduction-order divergence
+  between macOS (arm64, local dev) and Linux (x86_64, GitHub Actions
+  runner) of ~4e-8 on `mmd2_unbiased_lambda_4_raw` — both are legal
+  IEEE-754 float32 roundings of the same sum, not a correctness bug. The
+  `expected` values themselves were re-verified byte-for-byte identical
+  after rerunning `generate_fixture.py` with only the tolerance changed
+  (see `docs/UPSTREAM_DISCREPANCIES.md` D15). The new tolerance remains
+  5-6 orders of magnitude below any scientifically meaningful MMD
+  difference discussed in this repo (~1e-2-1e-1).
 - Clipping/sqrt: `mmd2_biased_*` and `mmd2_unbiased_*_raw` are never clipped
   internally by `compute_mmd`/`compute_mmd_biased_unbiased`; only the
   human-readable "distance" fields (`mmd_biased_lambda_*`,

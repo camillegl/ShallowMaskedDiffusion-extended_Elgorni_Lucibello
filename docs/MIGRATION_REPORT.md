@@ -30,11 +30,13 @@ behavior as fixtures and protecting the final-run MMD notebooks.
 | `diffusion.py` | **kept** (superseded, frozen) | imported by the protected corrected notebook; source of the pinned fixtures |
 | `models.py` | **kept** (superseded, frozen) | imported by `diffusion.py` |
 | `datasets.py` | **kept** (superseded, frozen) | imported by the protected corrected notebook |
-| `train.py` | **kept** (superseded, deprecated in help text) | legacy CLI for reproducing historical runs; `--alpha` help now states the M/N convention and points to `maskeddiffusion-train` |
-| `experiments-analysis/utils.py`, `run_uturn_experiments.py` | kept | used by historical (non-protected) notebooks |
+| `train.py` | **deleted on `guthlac`** (Phase 3F, see below) | legacy CLI for reproducing historical runs; retired once its historical Julia/notebook consumers were also retired |
+| `experiments-analysis/utils.py`, `run_uturn_experiments.py` | **deleted on `guthlac`** (Phase 3D, see below) | historical (non-protected) notebook consumers were also retired |
 
-No legacy module was deleted: the protected notebooks' importability outranks
-cleanup (stop-condition compliance).
+No legacy module was deleted at Phase 3A: the protected notebooks'
+importability outranks cleanup (stop-condition compliance). `utils.py` and
+`run_uturn_experiments.py` were later retired on `guthlac` (not Phase 3A;
+not `main`) once their only consumers (historical notebooks) were retired.
 
 ## Edits to legacy files (behavior-preserving, sanctioned)
 
@@ -71,7 +73,7 @@ yet extracted)
   `matplotlib`, `jupyterlab` deps) — removable only when the legacy modules
   and old notebooks retire.
 
-## Phase 3A (2026-07-21, uncommitted)
+## Phase 3A — committed at `ed42906cffd0b2b5989eb53e46f00ca6cdde4171` on `main`, pushed to `origin/main`
 
 - Deleted: `scripts/train-cpu.sh`, `scripts/train-gpu.sh`,
   `scripts/train-cpu-mnist.sh`, `scripts/span-slurm.sh`, `scripts/uturn.sh`
@@ -86,7 +88,145 @@ yet extracted)
   `docs/LEGACY_SCIENTIFIC_INDEX.md`, `docs/FINAL_REPOSITORY_MAP.md`.
 - This phase performed no Hopfield, DMFT, Julia, notebook, or dependency
   retirement, and no scientific code or notation change.
-- Status: **uncommitted** at the time of this edit.
+- Status: **committed and pushed** to `main`/`origin/main`.
+
+## Phase 3B — isolated on the `guthlac` branch (not merged to `main`)
+
+- Two commits on `guthlac`, both created directly through the GitHub API and
+  reviewed in a local checkout after the fact:
+  - `513fe7755d9dd65718da6b7720264033a0fd61a3` ("docs: archive Hopfield and
+    DMFT side study") — added `docs/archive/HOPFIELD_DMFT_ARCHIVE.md` and
+    `docs/PHASE3_BRANCH_REPORT.md`, and updated `docs/FROZEN_LEGACY_RUNTIME.md`
+    / `docs/FINAL_REPOSITORY_MAP.md` to reflect Phase 3A's committed status.
+    No deletion in this commit.
+  - `177fd8f84b0b02b799be057259ff74318c8761d7` ("chore: retire Hopfield and
+    DMFT side study") — deleted the three `src-hopfield/*.py` files, both
+    Hopfield/DMFT theory notes (`notes/notes_hopfield.typ`,
+    `notes/notes_dmft_masked_hopfield.typ`), three `data/hopfield_*_N20000_*.npz`
+    files, and four `notes/plots/hopfield_*.png` figures; added
+    `docs/archive/HOPFIELD_DMFT_RETIREMENT.md` recording exactly what was
+    removed and how to recover it.
+- **Incomplete retirement — closed by follow-up commit.** The retirement
+  commit above left several related tracked files behind on `guthlac` — two
+  stale-parameter data files
+  (`data/hopfield_T0_mcmc_N10000_S10_seed0.npz`,
+  `data/hopfield_T001_mcmc_N10000_S10_seed0.npz`), six figures
+  (`notes/plots/hopfield_T001_m_vs_t_mcmc_{pattern,random}.png`,
+  `notes/plots/hopfield_T0_m_vs_t_mcmc_{pattern,random}.png`,
+  `notes/plots/hopfield_T0_sweeps_mcmc_{pattern,random}.png` — two of the
+  first pair were actually referenced by the now-deleted
+  `notes/notes_hopfield.typ`, so they were orphaned), and the two compiled
+  PDFs (`notes/notes_hopfield.pdf`, `notes/notes_dmft_masked_hopfield.pdf`)
+  rendered from the deleted `.typ` sources. These ten paths were deleted by
+  the follow-up commit "chore: complete Hopfield and DMFT retirement"; full
+  inventory (size, blob, SHA-256, producer) in
+  `docs/archive/HOPFIELD_DMFT_ARCHIVE.md`, removal record in
+  `docs/archive/HOPFIELD_DMFT_RETIREMENT.md`.
+- Phase 3B exists **only** on `guthlac`; `main` is unaffected and remains at
+  Phase 3A (`ed42906cffd0b2b5989eb53e46f00ca6cdde4171`).
+- This phase (plus its Hopfield/DMFT follow-up) performed no Julia, notebook,
+  result, legacy-CLI, dependency, or CI retirement — those remain separate
+  steps, addressed later in this same Phase 3 effort per
+  `docs/PHASE3_BRANCH_REPORT.md`.
+
+## Phase 3C — obsolete Julia implementations (isolated on `guthlac`)
+
+- Commit "chore: retire obsolete Julia implementations": deleted all tracked
+  files under `julia-code/SP/` (saddle-point/ODE theory for the uniform-data
+  model, 14 files) and `julia-code/old/` (older Lux-based training
+  implementation, 3 files). `julia-code/hiddenmanifold/` is unaffected.
+- Full per-file inventory (size, blob, SHA-256, scientific/engineering role)
+  recorded in `docs/archive/JULIA_LEGACY_ARCHIVE.md` before deletion.
+- Phase 3C exists only on `guthlac`; `main` is unaffected.
+
+## Phase 3D — historical analysis notebooks and utilities (isolated on `guthlac`)
+
+- Commit "chore: retire historical analysis notebooks": deleted six
+  non-protected exploratory notebooks (`analysis.ipynb`, `analysis-J.ipynb`,
+  `analysis-mnist.ipynb`, `analysis-uturn.ipynb`,
+  `analysis_loss_convergence.ipynb`, `analysis_mmd_distribution_distance.ipynb`)
+  and their two shared utilities (`utils.py`, `run_uturn_experiments.py`).
+  The two protected notebooks
+  (`analysis_mmd_distribution_distance_corrected.ipynb`,
+  `mmd_results_presentation_1.ipynb`) are untouched.
+- Full per-file inventory (size, blob, SHA-256, purpose, consumers) recorded
+  in `docs/archive/HISTORICAL_NOTEBOOKS_ARCHIVE.md` before deletion.
+- Updated `docs/EQUATION_TO_CODE_MAP.md` and `docs/ORIGINAL_ARCHITECTURE.md`
+  to drop the now-stale line-number citation of the deleted
+  `run_uturn_experiments.py` driver script; the underlying mechanism it
+  drove (`diffusion.py:119-126` `test_step`) is unaffected and unchanged.
+- Phase 3D exists only on `guthlac`; `main` is unaffected.
+
+## Phase 3E — superseded result artifacts and bibliography reconciliation (isolated on `guthlac`)
+
+- Commit "chore: remove superseded result artifacts": deleted four orphaned
+  result tables (`experiments.csv` at root and in `experiments-analysis/`,
+  `experiments-analysis/results_mmd_distribution_distance.csv`, and
+  `experiments-analysis/results/results_mmd_distribution_distance.csv`) whose
+  sole consumers were the notebooks retired in Phase 3D, and three figures
+  (`fig_mmd_vs_alpha_D_sweep.png`, `fig_mmd_vs_alpha_lambdas.png`,
+  `fig_mmd_vs_alpha_multiscale.png`) confirmed produced only by the deleted
+  uncorrected MMD notebook, not the protected corrected one.
+- Reconciled `paper/bibliography.bib` against `notes/bibliography.bib`:
+  every key in the paper copy was already present in the notes copy (no
+  merge required), so the paper copy was deleted.
+- Five figures and 18 `res-exp-*.csv` files were reviewed and **retained**
+  because their producer/consumer status could not be established with
+  confidence; `notes/plots/` and `paper/plots/` were retained wholesale as
+  out of scope for this pass. Full accounting in
+  `docs/archive/LEGACY_RESULTS_ARCHIVE.md`.
+- No protected artifact (the three `results/*_corrected*.csv` files, the two
+  protected notebooks) was touched.
+- Phase 3E exists only on `guthlac`; `main` is unaffected.
+
+## Phase 3F — legacy training CLI and dependency cleanup (isolated on `guthlac`)
+
+- Verified (via `git grep`) that no retained script, notebook, test, or
+  documentation instruction imports or executes `train.py`, once its
+  historical Julia (Phase 3C) and notebook (Phase 3D) consumers were
+  retired. Deleted `train.py` (174 lines, blob `4c59502752cd22f597694265c5fa0ac69a80cb14`,
+  SHA-256 `278f504e85e1fd6576c2836da3f7e85cd191eaef4078159aa6fe9b9a21d3c5c`).
+  `datasets.py`, `diffusion.py`, `models.py` remain frozen and unaffected —
+  they are still required by the protected corrected notebook.
+- `git grep` confirmed `scipy`/`numba` have no remaining importers (their
+  sole prior consumer, the Hopfield/DMFT side study, was already retired)
+  and `tensorboard` has no remaining importer (its sole consumer, `train.py`,
+  was just deleted). Removed all three from `pyproject.toml`; regenerated
+  `uv.lock` via `uv lock` (not hand-edited).
+- Moved `jupyterlab` from core `dependencies` to a new `analysis`
+  `dependency-groups` entry (`uv sync --group analysis`) — it is
+  environment tooling to open notebooks, not an importable dependency of
+  any frozen module, and is still needed to interactively run the two
+  protected notebooks.
+- Verified `uv sync --frozen` (core, no jupyterlab) and
+  `uv sync --frozen --group analysis` (adds jupyterlab) both succeed against
+  the regenerated lock.
+- Phase 3F exists only on `guthlac`; `main` is unaffected and keeps
+  `train.py`, `scipy`, `numba`, `tensorboard`, and core-`dependencies`
+  `jupyterlab`.
+
+## Phase 3G — CI and repository hardening (isolated on `guthlac`)
+
+- Commit "ci: add repository validation workflow": added
+  `.github/workflows/ci.yml` — triggers on PRs and pushes to `main`/`guthlac`,
+  Ubuntu, Python 3.12 via `astral-sh/setup-uv`, `uv sync --frozen`, package
+  import, ruff check/format, mypy, pytest, protected-artifact validation, the
+  four CLI `--help` checks, and `git diff --check`. No experiment runs or
+  notebook execution in CI.
+- Added `tests/property/test_repository_hardening.py` with three static
+  tests: (1) nothing under `src/maskeddiffusion/` imports the root frozen
+  modules `datasets`/`diffusion`/`models`; (2) those three modules are not
+  duplicated inside `src/maskeddiffusion/`; (3) every file in
+  `artifacts/reference/mmd_final_run/manifest.json` exists and matches its
+  pinned SHA-256 (same check as `scripts/validate_reference_artifacts.sh`,
+  now also runnable under `pytest -q`). The bare-`alpha`/`gamma` enforcement
+  requirement was already covered by the existing
+  `tests/property/test_notation_enforcement.py::test_no_bare_alpha_identifiers_in_active_package`
+  and was not duplicated.
+- Test count: 125 → 128 (three new hardening tests; no existing test
+  removed or modified).
+- Phase 3G exists only on `guthlac`; `main` has neither the CI workflow nor
+  the new hardening tests.
 
 ## Dependencies removed
 
