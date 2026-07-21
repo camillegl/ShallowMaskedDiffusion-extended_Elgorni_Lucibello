@@ -242,6 +242,15 @@ def main(argv: list[str] | None = None) -> int:
         extra={
             "checkpoint_id": checkpoint_id,
             "checkpoint_file_sha256": checkpoint_sha256,
+            # The `seeds` field above records this evaluate invocation's own
+            # --config seed hierarchy (used for evaluation_data_seed/
+            # metric_seed), which is distinct from the seeds actually used to
+            # reconstruct the training set scored against — those come from
+            # the checkpoint's own recorded config, not --config (see above).
+            # Recording them explicitly here prevents a reader from assuming
+            # `seeds.train_data_seed` produced `train_set`.
+            "checkpoint_train_size": checkpoint_dims.train_size,
+            "checkpoint_train_data_seed": checkpoint_seeds.train_data_seed,
             # This CLI never moves the teacher/sample/model tensors onto a
             # non-cpu device — every op here is plain-tensor MMD/correlation
             # math on whatever device the inputs were saved on (always cpu
