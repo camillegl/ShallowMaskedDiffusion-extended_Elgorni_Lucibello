@@ -40,3 +40,18 @@ default + `legacy_init_only` compat mode), samplers (`samplers.py`, named per
 & symbol" columns above continue to describe the legacy modules, which remain frozen for
 the protected notebooks; regression fixtures tie the two together
 (`tests/fixtures/original_architecture_v1/`).
+
+**Phase-4C note (U-turn, 2026-07-21).** The U-turn retrieval experiment (row
+above) now has an active implementation: `src/maskeddiffusion/uturn.py`
+(library driver, reusing `samplers.sample`'s `initial_values`/`initial_mask`
+interface unchanged) and the `maskeddiffusion-uturn` CLI
+(`src/maskeddiffusion/cli/uturn.py`). It measures the same overlap
+`q_U(t) = mean_i[x_hat_i·x_clean_i]` as legacy `test_step`
+(`(xnew*x0).mean()`, `diffusion.py:123`), generalized in two contract-required
+directions: the clean example is either a training row or a fresh draw from
+the same finite-F teacher (paired mask/order/token seeds across the two
+sources), and any named sampler identity may be used, each defining its own
+conditioned terminal law. Reported alongside: the no-recovery baseline
+`1−t`, excess recovery `q_U(t)−(1−t)`, reconstruction Hamming error, and
+nearest-training diagnostics; no train-source result is labelled
+memorization without the fresh-source comparison.

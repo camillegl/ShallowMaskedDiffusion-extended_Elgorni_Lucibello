@@ -22,6 +22,7 @@ dependencies = [
 maskeddiffusion-train = "maskeddiffusion.cli.train:main"
 maskeddiffusion-sample = "maskeddiffusion.cli.sample:main"
 maskeddiffusion-evaluate = "maskeddiffusion.cli.evaluate:main"
+maskeddiffusion-uturn = "maskeddiffusion.cli.uturn:main"
 maskeddiffusion-validate-artifact = "maskeddiffusion.cli.validate_artifact:main"
 
 [dependency-groups]

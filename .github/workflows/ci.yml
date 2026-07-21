@@ -46,6 +46,7 @@ jobs:
           uv run maskeddiffusion-train --help
           uv run maskeddiffusion-sample --help
           uv run maskeddiffusion-evaluate --help
+          uv run maskeddiffusion-uturn --help
           uv run maskeddiffusion-validate-artifact --help
 
       - name: Diff whitespace check

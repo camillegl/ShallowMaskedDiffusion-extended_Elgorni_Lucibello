@@ -52,7 +52,7 @@ uv sync --group analysis
 
 CI (`.github/workflows/ci.yml`, on `main` since the Phase 3 merge) runs
 `uv sync --frozen`, imports `maskeddiffusion`, ruff check/format, mypy, the
-full test suite, protected-artifact validation, and the four CLI `--help`
+full test suite, protected-artifact validation, and the five CLI `--help`
 checks on every push/PR to `main` and `guthlac`.
 
 ## Usage
@@ -72,7 +72,10 @@ uv run maskeddiffusion-sample   --config configs/smoke/smoke.toml --output runs/
        --checkpoint runs/demo/checkpoints/final.pt --n-samples 100
 uv run maskeddiffusion-evaluate --config configs/smoke/smoke.toml --output runs/demo-eval \
        --checkpoint runs/demo/checkpoints/final.pt --teacher runs/demo/teacher.pt \
-       --samples runs/demo-samples/samples/samples.pt
+       --samples runs/demo-samples
+uv run maskeddiffusion-uturn    --config configs/smoke/smoke.toml --output runs/demo-uturn \
+       --checkpoint runs/demo/checkpoints/final.pt --teacher runs/demo/teacher.pt \
+       --t-values 0.0 0.25 0.5 0.75 --n-examples 8
 uv run maskeddiffusion-validate-artifact runs/demo
 ```
 
