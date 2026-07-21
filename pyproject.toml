@@ -24,6 +24,8 @@ maskeddiffusion-sample = "maskeddiffusion.cli.sample:main"
 maskeddiffusion-evaluate = "maskeddiffusion.cli.evaluate:main"
 maskeddiffusion-uturn = "maskeddiffusion.cli.uturn:main"
 maskeddiffusion-validate-artifact = "maskeddiffusion.cli.validate_artifact:main"
+maskeddiffusion-experiment = "maskeddiffusion.cli.experiment:main"
+maskeddiffusion-p4c-analyze = "maskeddiffusion.cli.analyze:main"
 
 [dependency-groups]
 dev = [

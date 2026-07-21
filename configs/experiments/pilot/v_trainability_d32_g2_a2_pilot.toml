@@ -1,0 +1,53 @@
+# Phase 4C pilot run — timing/storage calibration only, NOT the campaign
+# (docs/PHASE4C_EXPERIMENT_PROTOCOL.md §7 / campaign_v1 remains a plan).
+#
+# Central campaign_v1 cell: v_trainability, D=32, gamma=2, alpha=2 — same
+# design cell as configs/experiments/campaign_v1/v_trainability_d32_g2_a2.toml,
+# with modest settings (2 repeats, n_generate=200, max_steps=200, n_true=200,
+# U-turn at 3 t-values) so the run finishes in minutes on CPU and produces a
+# real timing/storage measurement. See docs/PHASE4C_PILOT_REPORT.md for the
+# recorded results and what they imply for campaign_v1's placeholder
+# training settings.
+
+n_generate = 200
+
+[experiment]
+experiment_id = "p4c-pilot-vtrain-d32-g2-a2"
+repeats = 2
+base_seed = 920000
+
+[intervention]
+name = "v_trainability"
+
+[dimensions]
+latent_dim = 32
+aspect_ratio = 2.0
+sample_ratio = 2.0
+
+[model]
+normalization = "explicit_sqrt_n"
+bias_policy = "none"
+diagonal_policy = "zero"
+# v_policy comes from the intervention arms.
+
+[training]
+batch_size = 64
+learning_rate = 1e-2
+l2reg = 0.0
+validation_size = 64
+validation_every = 50
+log_every = 25
+max_steps = 200
+
+[sampler]
+sampler_name = "sequential_random_stochastic"
+tokens_per_step = 1
+
+[evaluation]
+n_true = 200
+lambdas = [4.0, 8.0]
+
+[uturn]
+t_values = [0.2, 0.5, 0.8]
+n_examples = 8
+sources = ["train", "fresh"]
