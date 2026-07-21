@@ -54,12 +54,17 @@ def main(argv: list[str] | None = None) -> int:
     model = model.to(device).eval()
 
     with torch.no_grad():
+        # order/token generators must live on the model's device: samplers.sample()
+        # fills tensors directly on `device` (torch.rand(..., generator=g, device=d)
+        # requires g.device == d, unlike the CPU-resident data-generation streams
+        # in training.py which are deliberately kept on cpu and only the resulting
+        # *tensor* is moved).
         result = run_sampler(
             model,
             config.sampler,
             args.n_samples,
-            order_generator=config.seeds.generator("sampler_order_seed"),
-            token_generator=config.seeds.generator("sampler_token_seed"),
+            order_generator=config.seeds.generator("sampler_order_seed", device=device),
+            token_generator=config.seeds.generator("sampler_token_seed", device=device),
         )
 
     artifact = RunArtifact(out)

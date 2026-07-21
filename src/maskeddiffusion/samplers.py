@@ -153,6 +153,15 @@ def sample(
     """
     n = model.config.visible_dim
     device = next(model.parameters()).device
+    named_gens = (("order_generator", order_generator), ("token_generator", token_generator))
+    for gen_name, gen in named_gens:
+        if gen is not None and gen.device != device:
+            raise ValueError(
+                f"{gen_name}.device ({gen.device}) != model device ({device}); "
+                "torch requires the generator and the tensor it fills to share a "
+                "device — pass device= when creating the generator (e.g. "
+                "seeds.generator(stream, device=device))"
+            )
     if initial_values is None:
         values = torch.zeros((batch_size, n), device=device)
         is_masked = torch.ones((batch_size, n), dtype=torch.bool, device=device)

@@ -172,3 +172,25 @@ def test_nonunit_temperature_is_accepted_not_silently_rejected():
     docstring), not a malformed config; it must not be rejected."""
     cfg = SamplerConfig("sequential_random_stochastic", temperature=0.5)
     assert cfg.temperature == 0.5
+
+
+@pytest.mark.skipif(
+    not (torch.cuda.is_available() or torch.backends.mps.is_available()),
+    reason="requires a non-cpu device to construct a genuinely mismatched generator",
+)
+def test_generator_device_mismatch_raises_clear_error():
+    """torch.rand(..., generator=g, device=d) requires g.device == d; sample()
+    must raise a clear, actionable error before doing any tensor op, instead
+    of torch's own less-clear RuntimeError from deep inside the sampling loop."""
+    model = make_model()  # cpu
+    other_device = "cuda" if torch.cuda.is_available() else "mps"
+    mismatched_generator = torch.Generator(device=other_device).manual_seed(0)
+    cfg = SamplerConfig("sequential_random_stochastic")
+    with pytest.raises(ValueError, match="device"):
+        sample(
+            model,
+            cfg,
+            batch_size=1,
+            order_generator=mismatched_generator,
+            token_generator=torch.Generator().manual_seed(0),
+        )
