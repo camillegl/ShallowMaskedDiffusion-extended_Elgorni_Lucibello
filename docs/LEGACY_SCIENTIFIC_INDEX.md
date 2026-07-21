@@ -15,41 +15,51 @@ deletion. `git checkout phase2-hidden-manifold-foundation -- <path>` recovers
 any listed file from that point in history even after a future retirement
 phase deletes it from the working tree.
 
-## `src-hopfield/`
+## `src-hopfield/`, `notes/notes_hopfield.typ`, `notes/notes_dmft_masked_hopfield.typ`
 
-- **Purpose**: Python implementation of the clamped-Hopfield side-track —
-  `hopfield_saddle_point.py` (replica-symmetric saddle-point solver),
-  `mcmc_hopfield.py` (MCMC sampler), `plot_hopfield.py`.
-- **Unique scientific content**: yes — self-contained side-study code with no
-  duplicate elsewhere in the repository.
-- **Planned retirement phase**: a future "Hopfield retirement" phase (not
-  Phase 3A).
-- **Replacement / retained source**: theory remains in
-  `notes/notes_hopfield.typ` (see below); no replacement Python module exists
-  yet in `src/maskeddiffusion/`.
-- **Recovery**: `git show phase2-hidden-manifold-foundation:src-hopfield/<file>`.
+**Status: deleted from the `guthlac` branch** at commit
+`177fd8f84b0b02b799be057259ff74318c8761d7` ("chore: retire Hopfield and DMFT
+side study"), preceded by an archival commit
+`513fe7755d9dd65718da6b7720264033a0fd61a3`. **This retirement exists only on
+`guthlac` — `main` is unaffected and still has all of this material at
+`ed42906cffd0b2b5989eb53e46f00ca6cdde4171`.** The full scientific summary,
+code map, dependency tracing, and per-file inventory (with Git blob hashes)
+live in `docs/archive/HOPFIELD_DMFT_ARCHIVE.md`; the exact list of removed
+paths and recovery commands is in `docs/archive/HOPFIELD_DMFT_RETIREMENT.md`.
+Deletion did not remove the unique scientific content — it removes it from
+this branch's working tree while keeping it fully recoverable from Git
+history.
 
-## `notes/notes_hopfield.typ`
-
-- **Purpose**: Typst theory notes for the clamped-Hopfield model (replica
-  calculation), companion to `src-hopfield/`.
-- **Unique scientific content**: yes.
-- **Planned retirement phase**: paired with the future Hopfield retirement
-  phase; not retired independently of `src-hopfield/`.
-- **Replacement / retained source**: none planned; this remains the only
-  written record of that theory unless/until superseded.
-- **Recovery**: `git show phase2-hidden-manifold-foundation:notes/notes_hopfield.typ`.
-
-## `notes/notes_dmft_masked_hopfield.typ`
-
-- **Purpose**: Typst theory notes for a DMFT (dynamical mean-field theory)
-  treatment of masked Hopfield dynamics.
-- **Unique scientific content**: yes.
-- **Planned retirement phase**: a future "DMFT retirement" phase (not Phase
-  3A); may be retired together with or independently of the Hopfield
-  material, depending on later scoping.
-- **Replacement / retained source**: none planned.
-- **Recovery**: `git show phase2-hidden-manifold-foundation:notes/notes_dmft_masked_hopfield.typ`.
+- **Purpose**: `src-hopfield/hopfield_saddle_point.py` (replica-symmetric
+  saddle-point solver), `src-hopfield/mcmc_hopfield.py` (MCMC sampler),
+  `src-hopfield/plot_hopfield.py`, `notes/notes_hopfield.typ` (clamped-Hopfield
+  replica theory), `notes/notes_dmft_masked_hopfield.typ` (autoregressive/
+  masked-Hopfield DMFT-style exploration).
+- **Unique scientific content**: yes — confirmed by the Phase 3B1 audit
+  (`docs/archive/HOPFIELD_DMFT_ARCHIVE.md`) before deletion; self-contained
+  side-study code and notes with no duplicate elsewhere in the repository.
+- **Retirement status**: performed on `guthlac` only, **not merged to
+  `main`** and not yet approved for the main line. Treat this as a reviewable
+  branch-local change, not a completed repository-wide retirement.
+- **Replacement / retained source**: none — this was the only written record
+  of both theories and the only implementation of the clamped-Hopfield
+  numerics; nothing in `src/maskeddiffusion/` replaces it.
+- **Recovery** (both baselines are currently identical for these paths):
+  `git show phase2-hidden-manifold-foundation:<path>` or
+  `git show ed42906cffd0b2b5989eb53e46f00ca6cdde4171:<path>`, or
+  `git checkout ed42906cffd0b2b5989eb53e46f00ca6cdde4171 -- <path>` to restore
+  a working copy on `guthlac` if ever needed.
+- **Known incomplete-retirement gap** (not fixed by this reconciliation pass):
+  the retirement commit did not remove two stale-parameter data files
+  (`data/hopfield_T0_mcmc_N10000_S10_seed0.npz`,
+  `data/hopfield_T001_mcmc_N10000_S10_seed0.npz`), six figures under
+  `notes/plots/hopfield_*mcmc*.png` (two of which were referenced by the
+  now-deleted `notes/notes_hopfield.typ` and are now orphaned), or the two
+  compiled PDFs (`notes/notes_hopfield.pdf`,
+  `notes/notes_dmft_masked_hopfield.pdf`) rendered from the deleted `.typ`
+  sources — all still tracked on `guthlac`. See `docs/MIGRATION_REPORT.md`'s
+  Phase 3B section for the full list; resolving this is left to a follow-up
+  commit, not performed here.
 
 ## `julia-code/SP/`
 

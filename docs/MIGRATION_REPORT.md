@@ -71,7 +71,7 @@ yet extracted)
   `matplotlib`, `jupyterlab` deps) — removable only when the legacy modules
   and old notebooks retire.
 
-## Phase 3A (2026-07-21, uncommitted)
+## Phase 3A — committed at `ed42906cffd0b2b5989eb53e46f00ca6cdde4171` on `main`, pushed to `origin/main`
 
 - Deleted: `scripts/train-cpu.sh`, `scripts/train-gpu.sh`,
   `scripts/train-cpu-mnist.sh`, `scripts/span-slurm.sh`, `scripts/uturn.sh`
@@ -86,7 +86,44 @@ yet extracted)
   `docs/LEGACY_SCIENTIFIC_INDEX.md`, `docs/FINAL_REPOSITORY_MAP.md`.
 - This phase performed no Hopfield, DMFT, Julia, notebook, or dependency
   retirement, and no scientific code or notation change.
-- Status: **uncommitted** at the time of this edit.
+- Status: **committed and pushed** to `main`/`origin/main`.
+
+## Phase 3B — isolated on the `guthlac` branch (not merged to `main`)
+
+- Two commits on `guthlac`, both created directly through the GitHub API and
+  reviewed in a local checkout after the fact:
+  - `513fe7755d9dd65718da6b7720264033a0fd61a3` ("docs: archive Hopfield and
+    DMFT side study") — added `docs/archive/HOPFIELD_DMFT_ARCHIVE.md` and
+    `docs/PHASE3_BRANCH_REPORT.md`, and updated `docs/FROZEN_LEGACY_RUNTIME.md`
+    / `docs/FINAL_REPOSITORY_MAP.md` to reflect Phase 3A's committed status.
+    No deletion in this commit.
+  - `177fd8f84b0b02b799be057259ff74318c8761d7` ("chore: retire Hopfield and
+    DMFT side study") — deleted the three `src-hopfield/*.py` files, both
+    Hopfield/DMFT theory notes (`notes/notes_hopfield.typ`,
+    `notes/notes_dmft_masked_hopfield.typ`), three `data/hopfield_*_N20000_*.npz`
+    files, and four `notes/plots/hopfield_*.png` figures; added
+    `docs/archive/HOPFIELD_DMFT_RETIREMENT.md` recording exactly what was
+    removed and how to recover it.
+- **Incomplete retirement, noted for a follow-up commit (not performed by this
+  reconciliation pass):** the retirement commit left several related tracked
+  files behind on `guthlac` — two stale-parameter data files
+  (`data/hopfield_T0_mcmc_N10000_S10_seed0.npz`,
+  `data/hopfield_T001_mcmc_N10000_S10_seed0.npz`), six figures
+  (`notes/plots/hopfield_T001_m_vs_t_mcmc_{pattern,random}.png`,
+  `notes/plots/hopfield_T0_m_vs_t_mcmc_{pattern,random}.png`,
+  `notes/plots/hopfield_T0_sweeps_mcmc_{pattern,random}.png` — two of the
+  first pair were actually referenced by the now-deleted
+  `notes/notes_hopfield.typ`, so they are now orphaned), and the two compiled
+  PDFs (`notes/notes_hopfield.pdf`, `notes/notes_dmft_masked_hopfield.pdf`)
+  rendered from the deleted `.typ` sources. These are pre-existing tracked
+  files, not something this reconciliation pass introduces or is authorized
+  to delete; they are recorded here as a scope gap for the next Hopfield/DMFT
+  follow-up commit.
+- Phase 3B exists **only** on `guthlac`; `main` is unaffected and remains at
+  Phase 3A (`ed42906cffd0b2b5989eb53e46f00ca6cdde4171`).
+- This phase performed no Julia, notebook, result, legacy-CLI, dependency, or
+  CI retirement — those remain separate, unreviewed future steps per
+  `docs/PHASE3_BRANCH_REPORT.md`.
 
 ## Dependencies removed
 

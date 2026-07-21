@@ -29,8 +29,9 @@ Audit date: 2026-07-20.
 ## Paper source
 
 - `paper/main-neuralnetworks.typ` existed but was a **stub** (title and outline only; abstract
-  was "TODO"; it contained no equations); it was deleted in Phase 3A (2026-07-21,
-  uncommitted) — see `docs/LEGACY_SCIENTIFIC_INDEX.md` and `docs/FINAL_REPOSITORY_MAP.md`.
+  was "TODO"; it contained no equations); it was deleted in Phase 3A, committed at
+  `ed42906cffd0b2b5989eb53e46f00ca6cdde4171` on `main` — see
+  `docs/LEGACY_SCIENTIFIC_INDEX.md` and `docs/FINAL_REPOSITORY_MAP.md`.
   It was never an authoritative scientific source. All authoritative upstream equations
   remain in `notes/notes_memorization.typ`; the hidden-manifold theory remains in
   `notes/notes_hiddenmanifold.typ`. Statements in `docs/ORIGINAL_ARCHITECTURE.md` that cite
@@ -62,7 +63,7 @@ The following knowledge was extracted by direct reading of source at commit `2e2
 - Whether any archived experiment used `k>1`, `bias=True`, or unfrozen `V` was not exhaustively
   checked against stored artifacts.
 
-## Phase 3A retirement documents (2026-07-21, uncommitted)
+## Phase 3A retirement documents (committed at `ed42906cffd0b2b5989eb53e46f00ca6cdde4171` on `main`)
 
 See `docs/FROZEN_LEGACY_RUNTIME.md` (operating rules for the three frozen root
 modules), `docs/LEGACY_SCIENTIFIC_INDEX.md` (archival index of material

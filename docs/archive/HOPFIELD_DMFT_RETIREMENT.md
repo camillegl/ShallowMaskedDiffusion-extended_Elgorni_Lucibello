@@ -34,3 +34,24 @@ git checkout ed42906cffd0b2b5989eb53e46f00ca6cdde4171 -- <path>
 ```
 
 The archive document records the Git blob identifiers for the removed scientific files and outputs.
+
+## Known gap (found during Phase 3B1 verification, not fixed by this commit)
+
+This retirement did not remove every Hopfield/DMFT-related tracked file.
+Left behind on `guthlac`:
+
+- `data/hopfield_T0_mcmc_N10000_S10_seed0.npz`,
+  `data/hopfield_T001_mcmc_N10000_S10_seed0.npz` — stale-parameter data
+  (`N=10000`, not the current script's `N=20000`).
+- `notes/plots/hopfield_T001_m_vs_t_mcmc_pattern.png`,
+  `notes/plots/hopfield_T001_m_vs_t_mcmc_random.png` — these were embedded in
+  the now-deleted `notes/notes_hopfield.typ` and are consequently orphaned.
+- `notes/plots/hopfield_T0_m_vs_t_mcmc_pattern.png`,
+  `notes/plots/hopfield_T0_m_vs_t_mcmc_random.png`,
+  `notes/plots/hopfield_T0_sweeps_mcmc_pattern.png`,
+  `notes/plots/hopfield_T0_sweeps_mcmc_random.png` — produced but never
+  embedded in either note.
+- `notes/notes_hopfield.pdf`, `notes/notes_dmft_masked_hopfield.pdf` —
+  compiled output of the two deleted `.typ` sources, now orphaned.
+
+Resolving this is left to a follow-up commit; it is not performed here.
