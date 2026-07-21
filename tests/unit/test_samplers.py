@@ -33,10 +33,16 @@ ALL_SAMPLERS = [
 ]
 
 
+def _tokens_per_step_for(name: str) -> int:
+    # tokens_per_step only affects parallel_* samplers; SamplerConfig now
+    # rejects a non-1 value for every other sampler as misleading provenance.
+    return 2 if "parallel" in name else 1
+
+
 @pytest.mark.parametrize("name", ALL_SAMPLERS)
 def test_termination_and_pm1(name):
     model = make_model()
-    cfg = SamplerConfig(name, tokens_per_step=2)
+    cfg = SamplerConfig(name, tokens_per_step=_tokens_per_step_for(name))
     res = sample(model, cfg, batch_size=3, **gens())
     assert ((res.values == 1.0) | (res.values == -1.0)).all()
 
@@ -44,7 +50,7 @@ def test_termination_and_pm1(name):
 @pytest.mark.parametrize("name", ALL_SAMPLERS)
 def test_no_revision_and_only_masked_change(name):
     model = make_model()
-    cfg = SamplerConfig(name, tokens_per_step=2)
+    cfg = SamplerConfig(name, tokens_per_step=_tokens_per_step_for(name))
     res = sample(model, cfg, batch_size=3, record_trajectory=True, **gens())
     for step in range(len(res.trajectory) - 1):
         before, after = res.trajectory[step], res.trajectory[step + 1]
@@ -170,6 +176,45 @@ def test_rejects_bad_temperature():
 def test_nonunit_temperature_is_accepted_not_silently_rejected():
     """Non-unit temperature is a deliberate new sampler identity (see module
     docstring), not a malformed config; it must not be rejected."""
+    cfg = SamplerConfig("sequential_random_stochastic", temperature=0.5)
+    assert cfg.temperature == 0.5
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "sequential_random_stochastic",
+        "sequential_random_greedy",
+        "sequential_confidence_greedy",
+        "one_shot_stochastic",
+        "one_shot_greedy",
+    ],
+)
+def test_rejects_ineffective_tokens_per_step(name):
+    """tokens_per_step only affects parallel_* samplers; a non-1 value for
+    any other sampler was previously silently ignored and recorded verbatim
+    in the run manifest, misrepresenting provenance."""
+    with pytest.raises(ValueError, match="tokens_per_step"):
+        SamplerConfig(name, tokens_per_step=2)
+
+
+@pytest.mark.parametrize(
+    "name", ["sequential_random_greedy", "sequential_confidence_greedy", "one_shot_greedy"]
+)
+def test_rejects_ineffective_temperature_for_greedy(name):
+    """Greedy decoding (`logits >= 0`) never reads temperature; a non-unit
+    value was previously silently ignored and recorded verbatim in the run
+    manifest, misrepresenting provenance."""
+    with pytest.raises(ValueError, match="temperature"):
+        SamplerConfig(name, temperature=0.5)
+
+
+def test_parallel_sampler_accepts_tokens_per_step():
+    cfg = SamplerConfig("parallel_random_stochastic", tokens_per_step=3)
+    assert cfg.tokens_per_step == 3
+
+
+def test_stochastic_sampler_accepts_nonunit_temperature():
     cfg = SamplerConfig("sequential_random_stochastic", temperature=0.5)
     assert cfg.temperature == 0.5
 

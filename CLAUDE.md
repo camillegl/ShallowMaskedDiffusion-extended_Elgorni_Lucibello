@@ -66,8 +66,9 @@ Python-3.11 claim is wrong); where it conflicts with `docs/`, `docs/` wins.
 
 ## Verified commands (ran 2026-07-20, Phase 2; re-verified after the Phase 3 merge to `main`)
 
-- `uv run pytest -q` — full test suite (173+ tests as of Phase 4B; was 125 at Phase 2,
-  128 after Phase 3's CI-hardening tests — see `docs/MIGRATION_REPORT.md`).
+- `uv run pytest -q` — full test suite (198 tests as of Phase 4B provenance hardening,
+  PR #3; was 125 at Phase 2, 128 after Phase 3's CI-hardening tests — see
+  `docs/MIGRATION_REPORT.md`).
 - `scripts/reproduce_smoke.sh` — tiny CPU end-to-end run; integration check only.
 - `scripts/validate_reference_artifacts.sh` — verify protected-artifact hashes.
 - `uv run maskeddiffusion-train --help` (likewise `-sample`, `-evaluate`,

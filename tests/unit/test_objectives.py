@@ -180,3 +180,31 @@ def test_finite_at_t_equals_zero_end_to_end_with_gradient(monkeypatch):
     assert torch.isfinite(res.total)
     res.total.backward()
     assert torch.isfinite(model.W.grad).all()
+
+
+def test_inverse_time_weight_exact_for_small_positive_t():
+    """The t==0 fix must not distort 1/t for any t > 0, however close to 0 —
+    a clamp_min(eps) approach would silently rescale weights below eps."""
+    from maskeddiffusion.objectives import _safe_inverse_time
+
+    tiny = torch.finfo(torch.float32).eps / 4  # smaller than float32 eps, still > 0
+    t = torch.tensor([0.0, tiny, 0.5, 1.0])
+    weight = _safe_inverse_time(t)
+    assert weight[0].item() == 0.0
+    torch.testing.assert_close(weight[1:], 1.0 / t[1:], atol=0, rtol=0)
+
+
+def test_from_batch_rejects_masked_coordinate_at_t_equals_zero():
+    """A hand-built batch with a masked coordinate in a t==0 row is
+    inconsistent with the estimator (weight 1/t is defined as exactly 0
+    there) and must be rejected rather than silently scored as 0-weight."""
+    import pytest
+
+    model = make_model()
+    x = spins()
+    t = torch.tensor([0.0, 0.5, 0.9])
+    mask = torch.zeros((B, N), dtype=torch.bool)
+    mask[0, 0] = True  # inconsistent: t==0 but this row has a masked coordinate
+    batch = MaskedBatch(values=x, is_masked=mask, mask_probability=t, clean_targets=x)
+    with pytest.raises(ValueError, match="t == 0"):
+        continuous_time_masked_bce_from_batch(model, batch)

@@ -240,19 +240,23 @@ References are at commit `2e2db70`.
   run — including, eventually, any run in a future full experiment grid (item 5 of the
   Phase 4 request) if left unfixed, since NaN propagation through `AdamW` corrupts all
   subsequent steps, not just the one that drew it.
-- **Resolution.** Added `_safe_inverse_time(t)` (`objectives.py`), which clamps `t` below by
-  `torch.finfo(t.dtype).eps` before dividing, in both call sites. This keeps `1/t` finite
-  (bounded by `~1/eps`) for the degenerate row, so the same `finite * (1/eps) * 0`
-  evaluates to the mathematically-correct `0` rather than `NaN`, with **no effect on any
-  `t` not already within `eps` of 0** — verified by the full existing test suite passing
-  unchanged (171/171, no numeric fixture perturbed) plus two new regression tests
-  (`tests/unit/test_objectives.py::test_finite_at_t_equals_zero_from_batch` and
-  `::test_finite_at_t_equals_zero_end_to_end_with_gradient`, the latter forcing a genuine
-  `t=0` draw via `monkeypatch` and checking both the forward loss and `.backward()`'s
-  gradient stay finite).
+- **Resolution.** Added `_safe_inverse_time(t)` (`objectives.py`), which maps `t == 0`
+  exactly to a weight of `0` (via `torch.where`) and leaves `1.0 / t` untouched — to full
+  floating-point precision — for every `t > 0`, in both call sites. This makes the
+  degenerate row's contribution exactly `0` by construction rather than relying on
+  `finite * huge * 0` evaluating to `0`, and — unlike an earlier `clamp_min(eps)` version
+  of this fix — has **zero effect on any positive `t`, including values much smaller than
+  `eps`**, since the estimator is never evaluated at those; `continuous_time_masked_bce_from_batch`
+  additionally rejects any pre-built batch with a masked coordinate in a `t == 0` row, since
+  that combination is inconsistent with the estimator's definition. Verified by the full
+  existing test suite passing unchanged plus regression tests
+  (`tests/unit/test_objectives.py::test_finite_at_t_equals_zero_from_batch`,
+  `::test_finite_at_t_equals_zero_end_to_end_with_gradient`,
+  `::test_inverse_time_weight_exact_for_small_positive_t`, and
+  `::test_from_batch_rejects_masked_coordinate_at_t_equals_zero`).
 - **Type.** Engineering (numerical robustness; the objective's mathematical definition —
   `L = (1/(N·B)) Σ (1/t)·BCE`, `t ~ U(min_time, 1)` — is unchanged; only its floating-point
-  evaluation at a measure-zero edge case is corrected). **Status.** Resolved (Phase 3,
+  evaluation at a measure-zero edge case is corrected). **Status.** Resolved (Phase 4B,
   `guthlac`); `min_time` bounds (`0 <= min_time < 1`) are separately enforced at config
   construction (`TrainingConfig.__post_init__`), which prevents `min_time` itself from
   causing this, but does not prevent the `t=0` draw at `min_time=0.0` that this fix
