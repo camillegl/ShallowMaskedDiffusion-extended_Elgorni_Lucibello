@@ -1,5 +1,12 @@
 # Migration report — Phase 2 (2026-07-20)
 
+**Phase 3 status: MERGED.** Every "isolated on `guthlac`" / "exists only on `guthlac`; main
+is unaffected" statement in the Phase 3B-3G sections below described the state at the time
+each phase's commit was made, before review. All of Phase 3 was merged into `main` via
+[PR #2](https://github.com/camillegl/ShallowMaskedDiffusion-extended_Elgorni_Lucibello/pull/2)
+(merge commit `c6a716f2e8915c7a01864d1658275f9305586f5`); `main` now has the CI workflow,
+the retired `train.py`/dependencies, and every other Phase 3 change described here.
+
 Starting point: branch `main`, commit `fea744d`. (Line references in the Phase-1 documents
 `docs/UPSTREAM_DISCREPANCIES.md` / `docs/EQUATION_TO_CODE_MAP.md` cite the audit snapshot
 `2e2db70`; `fea744d` only removed `rsync-logs.sh`, so those references remain valid.) Phase 2 replaced the active

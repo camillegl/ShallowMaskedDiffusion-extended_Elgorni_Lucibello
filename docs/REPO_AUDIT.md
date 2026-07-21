@@ -5,6 +5,13 @@ truth for its domain, **N** = non-authoritative (report, artifact, or legacy). M
 actions are recommendations only — **nothing was deleted, renamed, or behaviorally modified
 in this audit**.
 
+**Phase 3 status: MERGED.** Table cells below saying a path was "deleted from `guthlac`"
+and "branch only, not merged to `main`" described the state at the time of writing. Phase 3
+(everything through commit `1d98ace`) was merged into `main` via
+[PR #2](https://github.com/camillegl/ShallowMaskedDiffusion-extended_Elgorni_Lucibello/pull/2)
+(merge commit `c6a716f2e8915c7a01864d1658275f9305586f5`) — those deletions are now on `main`
+too.
+
 | Path | Purpose | Status | Scientific relevance | Duplication | Action | Evidence / risk |
 |---|---|---|---|---|---|---|
 | `diffusion.py` | MaskedDiffusion Lightning module: loss, samplers | A (behavior) | Core | Samplers re-implemented in several notebooks | keep; later extract into a package | Read fully; dead import `from turtle import pd` at line 2 (harmless). Risk: low |

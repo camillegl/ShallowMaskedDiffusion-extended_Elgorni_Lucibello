@@ -181,3 +181,35 @@ def _smoke_toml_with_seed(base_seed: int) -> str:
     text = Path(CONFIG).read_text().replace("base_seed = 12345", f"base_seed = {base_seed}")
     assert f"base_seed = {base_seed}" in text, "smoke.toml's base_seed line format changed"
     return text
+
+
+def test_evaluate_rejects_samples_from_stale_checkpoint_id(tmp_path):
+    """Same teacher, but the sample artifact's recorded checkpoint_id no
+    longer matches --checkpoint's own content hash (e.g. the checkpoint
+    file was retrained/overwritten after the samples were generated) — must
+    be rejected, not silently scored as if nothing changed."""
+    _run, ckpt, samples_dir = _run_train_and_sample(tmp_path, "a")
+
+    manifest_path = samples_dir / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    assert manifest["checkpoint_id"]  # sanity: the field is actually populated
+    manifest["checkpoint_id"] = "ckpt-0000000000000000"  # tamper: stale/wrong hash
+    manifest_path.write_text(json.dumps(manifest))
+
+    with pytest.raises(ValueError, match="checkpoint_id"):
+        evaluate_main(
+            [
+                "--config",
+                CONFIG,
+                "--output",
+                str(tmp_path / "eval-stale"),
+                "--checkpoint",
+                str(ckpt),
+                "--teacher",
+                str(_run / "teacher.pt"),
+                "--samples",
+                str(samples_dir),
+                "--device",
+                "cpu",
+            ]
+        )

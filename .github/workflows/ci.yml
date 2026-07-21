@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -47,4 +49,24 @@ jobs:
           uv run maskeddiffusion-validate-artifact --help
 
       - name: Diff whitespace check
-        run: git diff --check
+        # `git diff --check` with no range compares the working tree against
+        # the index, which is always empty on a fresh CI checkout — it never
+        # actually inspected the PR's committed changes. Compare the real
+        # committed range instead: PR base...HEAD for pull_request events,
+        # the pushed commit range for push events (falling back to the
+        # single tip commit if `before` is the all-zero SHA, e.g. a branch's
+        # first push).
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch origin "${{ github.base_ref }}" --depth=1
+            range="origin/${{ github.base_ref }}...HEAD"
+          else
+            before="${{ github.event.before }}"
+            if [ -z "$before" ] || [ "$before" = "0000000000000000000000000000000000000000" ]; then
+              range="HEAD~1..HEAD"
+            else
+              range="$before..${{ github.sha }}"
+            fi
+          fi
+          echo "checking range: $range"
+          git diff --check "$range"

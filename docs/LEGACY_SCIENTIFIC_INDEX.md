@@ -1,5 +1,12 @@
 # Legacy scientific index
 
+**Phase 3 status: MERGED.** Every "deleted from the `guthlac` branch" / "Only on
+`guthlac` — `main` is unaffected" status line below described the state at the time each
+section was written, before review. All of Phase 3 was merged into `main` via
+[PR #2](https://github.com/camillegl/ShallowMaskedDiffusion-extended_Elgorni_Lucibello/pull/2)
+(merge commit `c6a716f2e8915c7a01864d1658275f9305586f5`) — these deletions are now on
+`main` too.
+
 Archival index of material scheduled for **later** retirement (not Phase 3A).
 This document exists so that later retirement phases (Hopfield, DMFT, Julia,
 notebook, result, or dependency retirement — all explicitly out of scope here)

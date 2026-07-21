@@ -50,10 +50,10 @@ the protected analysis notebooks, not required for tests or the CLIs):
 uv sync --group analysis
 ```
 
-CI (`.github/workflows/ci.yml`, `guthlac` branch only, not yet on `main`)
-runs `uv sync --frozen`, imports `maskeddiffusion`, ruff check/format,
-mypy, the full test suite, protected-artifact validation, and the four CLI
-`--help` checks on every push/PR to `main` and `guthlac`.
+CI (`.github/workflows/ci.yml`, on `main` since the Phase 3 merge) runs
+`uv sync --frozen`, imports `maskeddiffusion`, ruff check/format, mypy, the
+full test suite, protected-artifact validation, and the four CLI `--help`
+checks on every push/PR to `main` and `guthlac`.
 
 ## Usage
 
@@ -96,9 +96,10 @@ the test suite: `uv run pytest -q`.
 - `diffusion.py`, `models.py`, `datasets.py` — **frozen legacy** flat modules,
   kept only because the protected notebook imports them; superseded by the
   active package (see `docs/MIGRATION_REPORT.md`, `docs/FROZEN_LEGACY_RUNTIME.md`).
-  `train.py`, the separate non-protected legacy CLI, was retired on
-  `guthlac` once its historical consumers (old scripts, superseded
-  notebooks) were also retired (see `docs/archive/JULIA_LEGACY_ARCHIVE.md`,
+  `train.py`, the separate non-protected legacy CLI, was retired in the
+  Phase 3 retirement (merged to `main`) once its historical consumers (old
+  scripts, superseded notebooks) were also retired (see
+  `docs/archive/JULIA_LEGACY_ARCHIVE.md`,
   `docs/archive/HISTORICAL_NOTEBOOKS_ARCHIVE.md`).
 - `experiments-analysis/` — analysis notebooks and recorded results.
 - `notes/`, `julia-code/` — theory notes and side studies. The upstream and
@@ -107,7 +108,7 @@ the test suite: `uv run pytest -q`.
   manuscript directory (see `docs/LEGACY_SCIENTIFIC_INDEX.md`). The
   clamped-Hopfield/DMFT side study formerly at `src-hopfield/` and
   `notes/notes_hopfield.typ` / `notes/notes_dmft_masked_hopfield.typ` was
-  retired on this branch (`guthlac`, not merged to `main`); see
+  retired in the Phase 3 retirement (merged to `main`); see
   `docs/archive/HOPFIELD_DMFT_ARCHIVE.md` and
   `docs/archive/HOPFIELD_DMFT_RETIREMENT.md` for the record and recovery
   commands.

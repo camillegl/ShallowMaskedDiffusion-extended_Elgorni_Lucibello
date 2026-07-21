@@ -11,6 +11,24 @@ ROOT = Path(__file__).parents[2]
 SRC = ROOT / "src" / "maskeddiffusion"
 FROZEN_ROOT_MODULES = ["datasets", "diffusion", "models"]
 
+# The exact required protected-path set (docs/REFERENCE_RESULTS_MANIFEST.md).
+# A count-only check (len == 8) would pass even if the manifest were edited
+# to swap one protected path for an unrelated file while keeping the count
+# and every listed hash internally consistent; asserting the literal path
+# set closes that gap.
+REQUIRED_PROTECTED_PATHS = frozenset(
+    {
+        "experiments-analysis/analysis_mmd_distribution_distance_corrected.ipynb",
+        "experiments-analysis/mmd_results_presentation_1.ipynb",
+        "experiments-analysis/results/results_mmd_distribution_distance_corrected.csv",
+        "experiments-analysis/results/results_mmd_time_sliced.csv",
+        "experiments-analysis/results/results_mmd_distribution_distance_corrected_10k.csv",
+        "datasets.py",
+        "diffusion.py",
+        "models.py",
+    }
+)
+
 
 def test_active_package_never_imports_frozen_root_modules():
     """Nothing under src/maskeddiffusion/ may import the root-level frozen
@@ -49,6 +67,11 @@ def test_protected_reference_files_exist_and_are_hash_pinned():
     under `pytest -q`)."""
     manifest_path = ROOT / "artifacts" / "reference" / "mmd_final_run" / "manifest.json"
     manifest = json.loads(manifest_path.read_text())
+    actual_paths = {entry["path"] for entry in manifest["protected_files"]}
+    assert actual_paths == REQUIRED_PROTECTED_PATHS, (
+        f"protected path set changed: missing={REQUIRED_PROTECTED_PATHS - actual_paths}, "
+        f"unexpected={actual_paths - REQUIRED_PROTECTED_PATHS}"
+    )
     failures = []
     for entry in manifest["protected_files"]:
         p = ROOT / entry["path"]
@@ -59,4 +82,3 @@ def test_protected_reference_files_exist_and_are_hash_pinned():
         if digest != entry["sha256"]:
             failures.append(f"hash mismatch: {entry['path']}")
     assert failures == [], failures
-    assert len(manifest["protected_files"]) == 8
