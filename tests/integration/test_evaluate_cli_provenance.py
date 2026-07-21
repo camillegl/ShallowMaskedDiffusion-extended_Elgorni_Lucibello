@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from maskeddiffusion.cli.evaluate import main as evaluate_main
 from maskeddiffusion.cli.sample import main as sample_main
@@ -117,6 +118,58 @@ def test_evaluate_reconstructs_train_set_from_checkpoint_not_cli_config(tmp_path
         summary_same["model_vs_train"]["mixture_biased_mmd2"]
         == summary_mismatched["model_vs_train"]["mixture_biased_mmd2"]
     )
+
+
+def test_evaluate_manifest_records_checkpoint_derived_train_provenance(tmp_path):
+    """The evaluate manifest's `seeds` field records this invocation's own
+    --config seed hierarchy, which is distinct from the checkpoint-derived
+    train_size/train_data_seed actually used to reconstruct the training set
+    (see test_evaluate_reconstructs_train_set_from_checkpoint_not_cli_config).
+    Both must be readable directly from the manifest without cross-referencing
+    the checkpoint file by hand, and must genuinely differ when a mismatched
+    --config is passed."""
+    import tomllib
+
+    ckpt, samples = _train_and_sample(tmp_path)
+    mismatched = tmp_path / "mismatched.toml"
+    mismatched.write_text(MISMATCHED_CONFIG)
+
+    out = tmp_path / "eval_out"
+    assert (
+        evaluate_main(
+            [
+                "--config",
+                str(mismatched),
+                "--output",
+                str(out),
+                "--checkpoint",
+                str(ckpt),
+                "--teacher",
+                str(tmp_path / "run" / "teacher.pt"),
+                "--samples",
+                str(samples),
+                "--n-true",
+                "16",
+                "--device",
+                "cpu",
+            ]
+        )
+        == 0
+    )
+
+    manifest = json.loads((out / "manifest.json").read_text())
+    resolved = tomllib.loads(Path(CONFIG).read_text())
+    expected_train_size = round(
+        resolved["dimensions"]["sample_ratio"] * resolved["dimensions"]["latent_dim"]
+    )
+    assert manifest["checkpoint_train_size"] == expected_train_size
+    # MISMATCHED_CONFIG's own train_size (sample_ratio 3.0 * latent_dim 8 = 24)
+    # must not leak into the recorded checkpoint provenance
+    assert manifest["checkpoint_train_size"] != 24
+    # MISMATCHED_CONFIG uses base_seed 999, genuinely different from smoke.toml's
+    # 12345 -- so the checkpoint-derived seed and this invocation's own --config
+    # seed must differ, proving the manifest doesn't just echo --config seeds.
+    assert manifest["checkpoint_train_data_seed"] != manifest["seeds"]["train_data_seed"]
 
 
 def test_evaluate_rejects_checkpoint_tampered_outside_semantic_hash(tmp_path):

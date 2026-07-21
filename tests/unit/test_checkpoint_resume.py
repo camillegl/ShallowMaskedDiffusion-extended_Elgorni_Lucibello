@@ -129,10 +129,36 @@ def test_load_checkpoint_rejects_tampered_model_config(tmp_path):
         load_checkpoint(path)
 
 
+def test_load_checkpoint_rejects_tampered_config_dict(tmp_path):
+    """checkpoint_id must cover the full recorded `config` (RunConfig.to_dict()),
+    not just model_config: maskeddiffusion-evaluate reconstructs the training
+    set it scores against from this checkpoint's own config (train_size,
+    train_data_seed), so a weight-preserving edit there (e.g. swapping in a
+    different train_data_seed) must also invalidate the checkpoint's identity."""
+    import pytest
+
+    from maskeddiffusion.checkpoints import load_checkpoint
+
+    cfg = make_config(2)
+    ckpt_dir = tmp_path / "c"
+    train(cfg, device="cpu", checkpoint_dir=ckpt_dir)
+    path = ckpt_dir / "final.pt"
+
+    payload = torch.load(path, map_location="cpu", weights_only=False)
+    payload["config"] = {
+        **payload["config"],
+        "seeds": {**payload["config"]["seeds"], "train_data_seed": 999999},
+    }
+    torch.save(payload, path)  # weights, model_config, and checkpoint_id untouched
+
+    with pytest.raises(ValueError, match="checkpoint_id"):
+        load_checkpoint(path)
+
+
 def test_load_checkpoint_rejects_tampering_with_any_checkpoint_byte(tmp_path):
     """Any field checkpoint_identity hashes over (model_state, model_config,
-    teacher_id, step, examples_seen) must be tamper-evident, not just
-    model_state weights."""
+    config, teacher_id, step, examples_seen) must be tamper-evident, not
+    just model_state weights."""
     import pytest
 
     from maskeddiffusion.checkpoints import load_checkpoint
