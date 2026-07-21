@@ -141,3 +141,34 @@ def test_identity_records_selection_rules():
     ident2 = SamplerConfig("parallel_random_stochastic", tokens_per_step=4).identity()
     assert ident2["token_selection"] == "bernoulli_sigmoid"
     assert ident2["tokens_per_step"] == 4
+
+
+def test_rejects_unrecognized_sampler_name():
+    """An unrecognized sampler_name must raise at config construction, not
+    silently fall into the `elif name in _PARALLEL_NAMES` dispatch branch
+    in `sample()` (it previously used a bare `else: # parallel_*`)."""
+    with pytest.raises(ValueError, match="sampler_name"):
+        SamplerConfig("sequential_random_stochstic")  # typo
+
+
+def test_rejects_bad_tokens_per_step():
+    with pytest.raises(ValueError):
+        SamplerConfig("parallel_random_stochastic", tokens_per_step=0)
+    with pytest.raises(TypeError):
+        SamplerConfig("parallel_random_stochastic", tokens_per_step=1.5)
+
+
+def test_rejects_bad_temperature():
+    with pytest.raises(ValueError):
+        SamplerConfig("sequential_random_stochastic", temperature=0.0)
+    with pytest.raises(ValueError):
+        SamplerConfig("sequential_random_stochastic", temperature=-1.0)
+    with pytest.raises(ValueError):
+        SamplerConfig("sequential_random_stochastic", temperature=float("nan"))
+
+
+def test_nonunit_temperature_is_accepted_not_silently_rejected():
+    """Non-unit temperature is a deliberate new sampler identity (see module
+    docstring), not a malformed config; it must not be rejected."""
+    cfg = SamplerConfig("sequential_random_stochastic", temperature=0.5)
+    assert cfg.temperature == 0.5
