@@ -130,3 +130,53 @@ def test_result_shapes_and_totals():
     )
     assert res.per_example.shape == (B,)
     torch.testing.assert_close(res.total, res.data_loss + res.regularization)
+
+
+def test_finite_at_t_equals_zero_from_batch():
+    """t=0 -> is_masked all-False for that row (bernoulli_mask never fires
+    at probability 0) -> the intended contribution is exactly 0. Before the
+    _safe_inverse_time clamp (docs/UPSTREAM_DISCREPANCIES.md D16), `losses *
+    (1/t) * is_masked_float` computed `finite * inf * 0 = NaN` for that row
+    instead of 0, corrupting the whole batch's loss and gradient."""
+    model = make_model()
+    x = spins()
+    t = torch.tensor([0.0, 0.5, 0.9])
+    mask = torch.zeros((B, N), dtype=torch.bool)
+    mask[1:] = torch.rand((B - 1, N), generator=torch.Generator().manual_seed(3)) < t[1:].unsqueeze(
+        1
+    )
+    batch = MaskedBatch(values=x, is_masked=mask, mask_probability=t, clean_targets=x)
+    result = continuous_time_masked_bce_from_batch(model, batch)
+    assert torch.isfinite(result.data_loss)
+    assert torch.isfinite(result.total)
+    assert torch.isfinite(result.per_example).all()
+    # the t=0 row's own per-example loss must be exactly 0 (no masked
+    # positions -> no BCE contribution), not merely finite
+    assert result.per_example[0].item() == 0.0
+
+
+def test_finite_at_t_equals_zero_end_to_end_with_gradient(monkeypatch):
+    """Same edge case through the full continuous_time_masked_bce path
+    (t drawn by torch.rand, forced to exactly 0.0 for one row via
+    monkeypatch), checking backward() doesn't NaN the gradient either — a
+    forward-only fix (e.g. torch.where after the fact) would not
+    necessarily guarantee this, since autograd still differentiates through
+    the unselected branch."""
+    model = make_model()
+    x = spins(b=2)
+    generator = torch.Generator().manual_seed(0)
+
+    real_rand = torch.rand
+
+    def forced_zero_rand(*args, **kwargs):
+        out = real_rand(*args, **kwargs)
+        if out.shape == (x.shape[0],):  # the per-sequence t draw
+            out = out.clone()
+            out[0] = 0.0
+        return out
+
+    monkeypatch.setattr(torch, "rand", forced_zero_rand)
+    res = continuous_time_masked_bce(model, x, generator, l2reg=0.01, train_size=4)
+    assert torch.isfinite(res.total)
+    res.total.backward()
+    assert torch.isfinite(model.W.grad).all()

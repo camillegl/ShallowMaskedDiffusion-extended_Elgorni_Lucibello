@@ -221,3 +221,39 @@ References are at commit `2e2db70`.
 - **Type.** Engineering (test infrastructure/tolerance only — no scientific claim, MMD
   implementation, or protected artifact was touched). **Status.** Resolved (Phase 3,
   `guthlac`): see `docs/MMD_NOTEBOOK_PROVENANCE.md`'s "Cross-platform tolerance" note.
+
+## D16 — `1/t` inverse-time weighting could produce NaN loss/gradients at t=0
+
+- **Evidence.** `continuous_time_masked_bce` and `continuous_time_masked_bce_from_batch`
+  (`objectives.py`) computed `weight = (1.0 / t)` directly. `t ~ U(min_time, 1)` per
+  sequence via `torch.rand`, whose range is `[0, 1)` — `t` can draw exactly `0.0` even at
+  the documented default `min_time=0.0`. When it does, `bernoulli_mask(x, t, ...)` masks
+  every coordinate in that row with probability 0, so `batch.is_masked` is all-`False` for
+  that row — the row's intended loss contribution is exactly 0. But
+  `weighted = losses * weight_per_position * is_masked_as_float` then computes
+  `finite * inf * 0`, which IEEE-754 defines as `NaN`, not `0`, corrupting that row (and,
+  via the batch-summed `total` loss and its `.backward()`, the entire training step's loss
+  and gradient) instead of contributing nothing.
+- **Consequence.** A training run using the default `min_time=0.0` could hit a silent NaN
+  loss/gradient at any step, with probability approximately `batch_size / 2^23` per step
+  for float32 (`torch.rand`'s float32 granularity), for the entire duration of any training
+  run — including, eventually, any run in a future full experiment grid (item 5 of the
+  Phase 4 request) if left unfixed, since NaN propagation through `AdamW` corrupts all
+  subsequent steps, not just the one that drew it.
+- **Resolution.** Added `_safe_inverse_time(t)` (`objectives.py`), which clamps `t` below by
+  `torch.finfo(t.dtype).eps` before dividing, in both call sites. This keeps `1/t` finite
+  (bounded by `~1/eps`) for the degenerate row, so the same `finite * (1/eps) * 0`
+  evaluates to the mathematically-correct `0` rather than `NaN`, with **no effect on any
+  `t` not already within `eps` of 0** — verified by the full existing test suite passing
+  unchanged (171/171, no numeric fixture perturbed) plus two new regression tests
+  (`tests/unit/test_objectives.py::test_finite_at_t_equals_zero_from_batch` and
+  `::test_finite_at_t_equals_zero_end_to_end_with_gradient`, the latter forcing a genuine
+  `t=0` draw via `monkeypatch` and checking both the forward loss and `.backward()`'s
+  gradient stay finite).
+- **Type.** Engineering (numerical robustness; the objective's mathematical definition —
+  `L = (1/(N·B)) Σ (1/t)·BCE`, `t ~ U(min_time, 1)` — is unchanged; only its floating-point
+  evaluation at a measure-zero edge case is corrected). **Status.** Resolved (Phase 3,
+  `guthlac`); `min_time` bounds (`0 <= min_time < 1`) are separately enforced at config
+  construction (`TrainingConfig.__post_init__`), which prevents `min_time` itself from
+  causing this, but does not prevent the `t=0` draw at `min_time=0.0` that this fix
+  addresses.

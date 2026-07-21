@@ -30,6 +30,25 @@ from .masking import (
 from .models import LinearMaskedScore
 
 
+def _safe_inverse_time(t: torch.Tensor) -> torch.Tensor:
+    """1/t, with t clamped away from exactly 0.
+
+    `t ~ U(min_time, 1)` can draw exactly 0.0 even when min_time == 0.0 (its
+    documented default) — torch.rand's range is [0, 1). When it does, every
+    coordinate in that row is masked with probability 0 (bernoulli_mask), so
+    `batch.is_masked` is all-False for that row; the intended contribution
+    of that row to the loss is exactly 0. But `weighted = losses * (1/t) *
+    is_masked` computes `finite * inf * 0`, which is NaN under IEEE-754, not
+    0 — corrupting the whole batch's loss and gradient (docs/UPSTREAM_DISCREPANCIES.md
+    D16). Clamping t below by machine epsilon keeps 1/t finite (bounded by
+    ~1/eps) so the same all-zero-mask row instead contributes an exact,
+    correctly-zero `finite * (1/eps) * 0 = 0`, with no effect on any t not
+    already within eps of 0.
+    """
+    eps = torch.finfo(t.dtype).eps
+    return 1.0 / t.clamp_min(eps)
+
+
 @dataclass
 class ObjectiveResult:
     per_example: torch.Tensor  # (B,) unreduced data-loss per example
@@ -88,7 +107,7 @@ def continuous_time_masked_bce(
     if min_time > 0.0:
         t = min_time + (1.0 - min_time) * t
     batch = bernoulli_mask(x, t, generator)
-    weight = (1.0 / t).unsqueeze(1).expand_as(x)
+    weight = _safe_inverse_time(t).unsqueeze(1).expand_as(x)
     return _finalize(
         model, batch, weight, l2reg, train_size, extra={"mean_time": float(t.mean().item())}
     )
@@ -103,7 +122,7 @@ def continuous_time_masked_bce_from_batch(
 ) -> ObjectiveResult:
     """Same estimator evaluated on a pre-built MaskedBatch (deterministic tests)."""
     t = batch.mask_probability
-    weight = (1.0 / t).unsqueeze(1).expand_as(batch.values)
+    weight = _safe_inverse_time(t).unsqueeze(1).expand_as(batch.values)
     return _finalize(
         model, batch, weight, l2reg, train_size, extra={"mean_time": float(t.mean().item())}
     )
