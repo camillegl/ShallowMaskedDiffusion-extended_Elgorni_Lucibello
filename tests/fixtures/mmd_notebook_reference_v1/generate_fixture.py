@@ -150,7 +150,17 @@ def main() -> None:
             "mmd2_unbiased_mixture_raw": result_unchunked["mmd2_unbiased_mixture_raw"],
             "mmd_biased_mixture": result_unchunked["mmd_biased_mixture"],
         },
-        "tolerance": {"rel": 1e-6, "abs": 1e-9},
+        # rel=1e-6 was observed to be right at the boundary of, and abs=1e-9
+        # tighter than, the actual float32 CPU reduction-order divergence
+        # between macOS (arm64) and Linux (x86_64) CI runners — both legal
+        # IEEE-754 float32 roundings of the same chunked sum, not a
+        # correctness bug. Widened once CI (added after this fixture was
+        # first generated) exposed the cross-platform gap; see
+        # docs/MMD_NOTEBOOK_PROVENANCE.md and
+        # docs/UPSTREAM_DISCREPANCIES.md D15. Still 5-6 orders of magnitude
+        # below any scientifically meaningful MMD difference discussed in
+        # this repo (~1e-2-1e-1).
+        "tolerance": {"rel": 5e-6, "abs": 1e-7},
     }
 
     out_path = FIXTURE_DIR / "fixture.json"
