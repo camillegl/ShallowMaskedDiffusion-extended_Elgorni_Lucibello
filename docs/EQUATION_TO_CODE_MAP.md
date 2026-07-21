@@ -55,3 +55,13 @@ conditioned terminal law. Reported alongside: the no-recovery baseline
 `1−t`, excess recovery `q_U(t)−(1−t)`, reconstruction Hamming error, and
 nearest-training diagnostics; no train-source result is labelled
 memorization without the fresh-source comparison.
+
+**Phase-4C note (engine integration, later addendum).** The Phase 4C
+paired-experiment engine (`src/maskeddiffusion/experiments/`, see
+`docs/PHASE4C_EXPERIMENT_PROTOCOL.md` §3) can also drive this same
+`run_uturn`/`summarize_uturn` pair as an optional per-arm stage
+(`experiments.uturn_stage`, no changes to `uturn.py` itself) when an
+experiment TOML includes a `[uturn]` table, writing a fourth ADR-003
+artifact alongside train/samples/eval. No new equation or observable is
+introduced; the engine only orchestrates the existing library call and
+reduces its output to a single summary curve for the canonical run record.

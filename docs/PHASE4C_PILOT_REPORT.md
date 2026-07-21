@@ -27,7 +27,7 @@ benchmarks.
 | `maskeddiffusion-experiment` (4 runs: train+sample+eval+uturn each) | **3.42 s wall**, 1.99 s user, 0.72 s sys | ≈0.86 s/run average, all four stages included |
 | — of which, one run's `train` stage alone | **0.079 s** (`train/summary.json` `wall_clock_s`, 200 steps) | negligible at this scale: D=32 is a tiny linear model; training is not the bottleneck |
 | `maskeddiffusion-p4c-analyze` (4 records → tables/report/figures) | **4.63 s wall**, 3.28 s user, 0.48 s sys | dominated by MMD kernel computation (`n_true=200`, quadratic in sample count) and figure rendering, not I/O |
-| Peak RSS, experiment run | 289 MB | | 
+| Peak RSS, experiment run | 289 MB | |
 | Peak RSS, analyze run | 328 MB | |
 
 Training time is essentially free at D=32; the per-run cost is dominated by

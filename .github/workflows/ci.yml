@@ -48,6 +48,8 @@ jobs:
           uv run maskeddiffusion-evaluate --help
           uv run maskeddiffusion-uturn --help
           uv run maskeddiffusion-validate-artifact --help
+          uv run maskeddiffusion-experiment --help
+          uv run maskeddiffusion-p4c-analyze --help
 
       - name: Diff whitespace check
         # `git diff --check` with no range compares the working tree against

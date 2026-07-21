@@ -24,4 +24,12 @@ other_logs/
 !.claude/skills/
 # transient run outputs (reference manifests stay tracked)
 artifacts/smoke-run*/
+artifacts/pilot/
 runs/
+
+# julia-code/SP was retired in Phase 3 (docs/archive/JULIA_LEGACY_ARCHIVE.md);
+# its data/plots outputs were always gitignored pre-retirement (never
+# committed) and are re-ignored here since the retirement commit removed the
+# old julia-code/SP/.gitignore along with the tracked source.
+julia-code/SP/data/
+julia-code/SP/plots/

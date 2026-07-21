@@ -65,6 +65,28 @@ All of the above concern the **uniform-data model only** — they predate and
 are independent of the hidden-manifold extension and are not consumed by
 `src/maskeddiffusion/`, any retained notebook, or any protected artifact.
 
+### Addendum (2026-07-21): local `data/`/`plots/` outputs are not archived history
+
+`julia-code/SP/.gitignore` (deleted by this retirement, content `data/` and
+`plots/`) shows those two subdirectories were **always gitignored and never
+committed** — they held local numerical outputs (saddle-point/ODE sweep
+results, retrieval-accuracy CSVs, Hebbian oneshot/U-turn experiment result
+tables, a `notebooks/plots.ipynb`-adjacent figure cache) generated on a
+contributor's machine before this retirement, not tracked repository
+content. `git log --all -- julia-code/SP/data julia-code/SP/plots` returns
+nothing: there is no commit to recover these from or lose by deleting them.
+
+Because this retirement deleted `julia-code/SP/.gitignore` along with the
+tracked source, these pre-existing local files (~135 MB, confirmed present
+on this machine as of 2026-07-21) stopped being ignored and began showing as
+untracked clutter in `git status`. The fix applied is to reinstate the
+ignore rule directly in the root `.gitignore`
+(`julia-code/SP/data/`, `julia-code/SP/plots/`) rather than deleting the
+files — they are a contributor's local scratch output, not something this
+repository should destroy on their behalf, but they also were never meant to
+be repository content. No file under these two paths was modified or
+removed by this addendum.
+
 ## `julia-code/old/` — retired (older Lux/uniform-data implementation)
 
 **Scientific role.** An earlier neural-network-based (Lux.jl/Zygote/Enzyme)

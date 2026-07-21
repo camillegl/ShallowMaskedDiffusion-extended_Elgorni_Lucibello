@@ -52,7 +52,7 @@ uv sync --group analysis
 
 CI (`.github/workflows/ci.yml`, on `main` since the Phase 3 merge) runs
 `uv sync --frozen`, imports `maskeddiffusion`, ruff check/format, mypy, the
-full test suite, protected-artifact validation, and the five CLI `--help`
+full test suite, protected-artifact validation, and the seven CLI `--help`
 checks on every push/PR to `main` and `guthlac`.
 
 ## Usage
