@@ -43,6 +43,18 @@ Requires [uv](https://docs.astral.sh/uv/) and Python 3.12 (pinned in
 uv sync
 ```
 
+To also install interactive notebook tooling (`jupyterlab`, needed to open
+the protected analysis notebooks, not required for tests or the CLIs):
+
+```
+uv sync --group analysis
+```
+
+CI (`.github/workflows/ci.yml`, `guthlac` branch only, not yet on `main`)
+runs `uv sync --frozen`, imports `maskeddiffusion`, ruff check/format,
+mypy, the full test suite, protected-artifact validation, and the four CLI
+`--help` checks on every push/PR to `main` and `guthlac`.
+
 ## Usage
 
 Smoke check (tiny CPU run, integration only — never interpret scientifically):

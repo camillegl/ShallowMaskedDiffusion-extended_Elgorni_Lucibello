@@ -20,8 +20,10 @@ Hopfield/DMFT side study from that branch's working tree; see
 `docs/archive/HOPFIELD_DMFT_ARCHIVE.md` and
 `docs/archive/HOPFIELD_DMFT_RETIREMENT.md`. Julia retirement, historical-
 notebook retirement, non-protected result cleanup, legacy-CLI (`train.py`)
-retirement, dependency reduction, and CI hardening remain separate,
-unreviewed, reviewable steps — none has begun.
+retirement, dependency reduction, and CI hardening have since all been
+completed on `guthlac` as separate, reviewable commits (see
+`docs/PHASE3_BRANCH_REPORT.md` for the full commit list); none is merged to
+`main`.
 
 ## Retained paths
 

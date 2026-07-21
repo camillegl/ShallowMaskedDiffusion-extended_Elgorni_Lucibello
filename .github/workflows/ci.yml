@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - guthlac
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Import active package
+        run: uv run python -c "import maskeddiffusion; print(maskeddiffusion.__file__)"
+
+      - name: Ruff check
+        run: uv run ruff check .
+
+      - name: Ruff format check
+        run: uv run ruff format --check .
+
+      - name: mypy
+        run: uv run mypy src
+
+      - name: pytest
+        run: uv run pytest -q
+
+      - name: Validate protected reference artifacts
+        run: ./scripts/validate_reference_artifacts.sh
+
+      - name: CLI --help checks
+        run: |
+          uv run maskeddiffusion-train --help
+          uv run maskeddiffusion-sample --help
+          uv run maskeddiffusion-evaluate --help
+          uv run maskeddiffusion-validate-artifact --help
+
+      - name: Diff whitespace check
+        run: git diff --check

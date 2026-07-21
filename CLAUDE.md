@@ -74,6 +74,9 @@ Python-3.11 claim is wrong); where it conflicts with `docs/`, `docs/` wins.
 - `uv run python train.py --help` — legacy CLI on `main`; `--alpha` there means M/L; model
   strings use underscores (`rfs10_tanh`). Not available on `guthlac`, where `train.py` was
   retired (see `docs/MIGRATION_REPORT.md`'s Phase 3F section).
+- `.github/workflows/ci.yml` (`guthlac` only, not yet on `main`) runs the equivalent of the
+  commands above plus the four CLI `--help` checks and `git diff --check`, on every
+  push/PR to `main` and `guthlac`.
 
 ## Forbidden actions
 

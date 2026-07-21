@@ -54,7 +54,8 @@ The following destructive steps remain separate, not-yet-started commits:
 5. ~~`train.py` and dependency retirement~~ — **done**, in "chore: retire
    legacy training CLI and unused dependencies"; see
    `docs/MIGRATION_REPORT.md`'s Phase 3F section.
-6. CI and final repository hardening.
+6. ~~CI and final repository hardening~~ — **done**, in "ci: add repository
+   validation workflow"; see `docs/MIGRATION_REPORT.md`'s Phase 3G section.
 
 This separation is intentional: each category is independently reviewable
 and reversible before being merged into `main`.

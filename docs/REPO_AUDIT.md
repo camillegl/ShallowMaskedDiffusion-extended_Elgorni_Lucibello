@@ -38,8 +38,11 @@ in this audit**.
 
 ## Cross-cutting findings
 
-- **No test suite and no CI** exist (`tests/`, `.github/` absent). Correctness is currently
-  verified only through notebooks and logged metrics.
+- **No test suite and no CI** existed at audit time (`tests/`, `.github/` absent);
+  correctness was verified only through notebooks and logged metrics. Both gaps are
+  since closed: `tests/` (125+ tests) was added in Phase 2, and
+  `.github/workflows/ci.yml` was added on `guthlac` in Phase 3 (not yet on `main`) —
+  see `docs/PHASE3_BRANCH_REPORT.md`.
 - **Notebook-trapped logic** is the main migration hazard: the MMD estimator, the sign-channel
   patch (`0 → +1`), and per-notebook sampler copies exist only inside `.ipynb` files. (The
   hidden-manifold *generator* is properly in `datasets.py` and is reused by the notebooks.)

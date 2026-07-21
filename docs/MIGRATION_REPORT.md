@@ -205,6 +205,29 @@ yet extracted)
   `train.py`, `scipy`, `numba`, `tensorboard`, and core-`dependencies`
   `jupyterlab`.
 
+## Phase 3G — CI and repository hardening (isolated on `guthlac`)
+
+- Commit "ci: add repository validation workflow": added
+  `.github/workflows/ci.yml` — triggers on PRs and pushes to `main`/`guthlac`,
+  Ubuntu, Python 3.12 via `astral-sh/setup-uv`, `uv sync --frozen`, package
+  import, ruff check/format, mypy, pytest, protected-artifact validation, the
+  four CLI `--help` checks, and `git diff --check`. No experiment runs or
+  notebook execution in CI.
+- Added `tests/property/test_repository_hardening.py` with three static
+  tests: (1) nothing under `src/maskeddiffusion/` imports the root frozen
+  modules `datasets`/`diffusion`/`models`; (2) those three modules are not
+  duplicated inside `src/maskeddiffusion/`; (3) every file in
+  `artifacts/reference/mmd_final_run/manifest.json` exists and matches its
+  pinned SHA-256 (same check as `scripts/validate_reference_artifacts.sh`,
+  now also runnable under `pytest -q`). The bare-`alpha`/`gamma` enforcement
+  requirement was already covered by the existing
+  `tests/property/test_notation_enforcement.py::test_no_bare_alpha_identifiers_in_active_package`
+  and was not duplicated.
+- Test count: 125 → 128 (three new hardening tests; no existing test
+  removed or modified).
+- Phase 3G exists only on `guthlac`; `main` has neither the CI workflow nor
+  the new hardening tests.
+
 ## Dependencies removed
 
 - `hydra-core` (never imported anywhere — verified by grep over all .py and
