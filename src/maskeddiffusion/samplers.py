@@ -81,11 +81,30 @@ class SamplerConfig:
             raise ValueError(f"tokens_per_step must be >= 1, got {self.tokens_per_step}")
         if not math.isfinite(self.temperature) or self.temperature <= 0:
             raise ValueError(f"temperature must be finite and > 0, got {self.temperature}")
-        # temperature != 1.0 is not rejected here: docs/RESEARCH_SPEC.md and
-        # this module's docstring require temperature == 1.0 for any
-        # contract-comparable run, but a non-unit value is a deliberate new
-        # sampler identity, not a malformed config — callers must justify
-        # and record it, not have it silently rejected.
+        # tokens_per_step only affects parallel_* samplers (sequential_* always
+        # take k=1, one_shot_* resolve every coordinate at once); recording an
+        # arbitrary value for the others would misrepresent provenance for a
+        # setting that was silently ignored.
+        if self.sampler_name not in _PARALLEL_NAMES and self.tokens_per_step != 1:
+            raise ValueError(
+                f"tokens_per_step={self.tokens_per_step} has no effect on sampler "
+                f"{self.sampler_name!r} (only parallel_* samplers use it) — pass 1 "
+                "or omit it"
+            )
+        # temperature != 1.0 is not rejected here for stochastic/soft-decode
+        # samplers: docs/RESEARCH_SPEC.md and this module's docstring require
+        # temperature == 1.0 for any contract-comparable run, but a non-unit
+        # value there is a deliberate new sampler identity, not a malformed
+        # config. Greedy decoding (`logits >= 0`, see _decode_tokens) never
+        # reads temperature at all, so a non-unit value for a greedy sampler
+        # is not a new identity — it is silently ineffective and misleading
+        # provenance, so it is rejected outright.
+        if "greedy" in self.sampler_name and self.temperature != 1.0:
+            raise ValueError(
+                f"temperature={self.temperature} has no effect on greedy sampler "
+                f"{self.sampler_name!r} (greedy decoding ignores temperature) — pass "
+                "1.0 or omit it"
+            )
         if self.revision_policy != "never":
             raise ValueError(f"revision_policy must be 'never', got {self.revision_policy!r}")
 
