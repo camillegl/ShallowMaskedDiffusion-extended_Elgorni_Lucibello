@@ -8,16 +8,14 @@ dependencies = [
     # Active package
     "torch>=2.8.0,<3.0",
     "numpy>=1.26",
-    # Legacy modules + analysis notebooks (removed when legacy retires)
+    # Frozen legacy compatibility modules (datasets.py, diffusion.py, models.py)
+    # required by the protected corrected MMD notebook (docs/FROZEN_LEGACY_RUNTIME.md)
     "lightning>=2.5.5,<3.0",
-    "matplotlib>=3.10.6,<4.0",
-    "pandas>=2.3.3,<3.0",
-    "scipy>=1.14.0,<2.0",
-    "tensorboard>=2.20.0,<3.0",
     "torchvision>=0.23.0,<1.0",
     "tqdm>=4.67.1,<5.0",
-    "numba>=0.60.0",
-    "jupyterlab>=4.4.9,<5.0",
+    # Protected notebook analysis stack (shared by both protected notebooks)
+    "matplotlib>=3.10.6,<4.0",
+    "pandas>=2.3.3,<3.0",
 ]
 
 [project.scripts]
@@ -31,6 +29,11 @@ dev = [
     "pytest>=8.0",
     "ruff>=0.6",
     "mypy>=1.10",
+]
+# Optional interactive notebook tooling; not required to run tests, the
+# active package, or re-run the protected notebooks non-interactively.
+analysis = [
+    "jupyterlab>=4.4.9,<5.0",
 ]
 
 [build-system]

@@ -51,7 +51,9 @@ The following destructive steps remain separate, not-yet-started commits:
    `docs/archive/HISTORICAL_NOTEBOOKS_ARCHIVE.md`.
 4. ~~non-protected result cleanup~~ — **done**, in "chore: remove superseded
    result artifacts"; see `docs/archive/LEGACY_RESULTS_ARCHIVE.md`.
-5. `train.py` and dependency retirement;
+5. ~~`train.py` and dependency retirement~~ — **done**, in "chore: retire
+   legacy training CLI and unused dependencies"; see
+   `docs/MIGRATION_REPORT.md`'s Phase 3F section.
 6. CI and final repository hardening.
 
 This separation is intentional: each category is independently reviewable

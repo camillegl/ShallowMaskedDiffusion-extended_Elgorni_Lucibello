@@ -82,9 +82,12 @@ the test suite: `uv run pytest -q`.
   `docs/LEGACY_SCIENTIFIC_INDEX.md`, and `docs/FINAL_REPOSITORY_MAP.md` for
   the legacy-retirement plan).
 - `diffusion.py`, `models.py`, `datasets.py` — **frozen legacy** flat modules,
-  kept only because the protected notebook imports them; `train.py` is a
-  separate, non-protected legacy CLI. Both are superseded by the package
-  (see `docs/MIGRATION_REPORT.md`, `docs/FROZEN_LEGACY_RUNTIME.md`).
+  kept only because the protected notebook imports them; superseded by the
+  active package (see `docs/MIGRATION_REPORT.md`, `docs/FROZEN_LEGACY_RUNTIME.md`).
+  `train.py`, the separate non-protected legacy CLI, was retired on
+  `guthlac` once its historical consumers (old scripts, superseded
+  notebooks) were also retired (see `docs/archive/JULIA_LEGACY_ARCHIVE.md`,
+  `docs/archive/HISTORICAL_NOTEBOOKS_ARCHIVE.md`).
 - `experiments-analysis/` — analysis notebooks and recorded results.
 - `notes/`, `julia-code/` — theory notes and side studies. The upstream and
   hidden-manifold theory live in `notes/notes_memorization.typ` and

@@ -18,10 +18,13 @@ in turn imports `models.py`. As long as that notebook is preserved and
 required to remain re-runnable, these three modules must remain importable
 from the repository root.
 
-`train.py` is a separate, non-protected legacy CLI. It is **not** hash-pinned
-or listed in `artifacts/reference/mmd_final_run/manifest.json`, and this
-document makes no protection claim about it. `train.py` is a deprecated
-reproduction tool for historical runs, not a frozen compatibility file.
+`train.py` was a separate, non-protected legacy CLI. It was never
+hash-pinned or listed in `artifacts/reference/mmd_final_run/manifest.json`,
+and this document made no protection claim about it. It was retired
+(deleted) on the `guthlac` branch once its historical consumers (the old
+Julia scripts and superseded historical notebooks) were also retired; it
+remains present on `main`. See `docs/archive/JULIA_LEGACY_ARCHIVE.md` and
+`docs/archive/HISTORICAL_NOTEBOOKS_ARCHIVE.md`.
 
 ## Rules
 
@@ -63,25 +66,24 @@ Import tracing (grep over all tracked `.py` files and notebook source, not
 - **Protected/historical analysis** (required by the protected notebooks
   and/or retained historical analysis material, not by the frozen root
   modules themselves): `numpy`, `pandas`, `matplotlib`.
-- **Other historical material, not proven requirements of the frozen root
-  modules**: `scipy` and `numba` are used exclusively by the Hopfield/DMFT
-  side study (`scipy` by `src-hopfield/hopfield_saddle_point.py`, `numba` by
-  `src-hopfield/mcmc_hopfield.py` — see `docs/archive/HOPFIELD_DMFT_ARCHIVE.md`;
-  that side study is retired on the `guthlac` branch but still present on
-  `main`); `tensorboard` is imported explicitly by `train.py`
-  (`pytorch_lightning.loggers.TensorBoardLogger`) and by several historical,
-  non-protected notebooks, not by the frozen root modules; `jupyterlab` is
-  not an importable library dependency — it is the environment needed to
-  open/run any notebook (protected or historical), retained for that reason.
-
-**`scipy` and `numba` are dependency-cleanup *candidates*, not proven
-removable.** Their only currently-known use is the Hopfield/DMFT side study,
-but that conclusion rests on a grep of tracked files on the branch(es)
-checked at the time of writing — a full repository-wide import and notebook
-scan (across all branches intended to merge, and executed rather than
-grepped for notebooks) must be completed before either dependency is
-actually removed from `pyproject.toml`/`uv.lock`. No dependency is removed by
-any Phase 3A or Phase 3B document or commit referenced here.
+- **Removed (Phase 6, `guthlac` only)**: `scipy` and `numba` were used
+  exclusively by the Hopfield/DMFT side study (`scipy` by
+  `src-hopfield/hopfield_saddle_point.py`, `numba` by
+  `src-hopfield/mcmc_hopfield.py` — see `docs/archive/HOPFIELD_DMFT_ARCHIVE.md`),
+  which was retired on `guthlac` in an earlier commit; a repository-wide
+  `git grep` confirmed no remaining `.py`/`.ipynb` source imports either
+  package. `tensorboard` was imported only by the now-deleted `train.py`
+  (`pytorch_lightning.loggers.TensorBoardLogger`); a `git grep` confirmed no
+  remaining consumer. All three were removed from `pyproject.toml` and
+  `uv.lock` in "chore: retire legacy training CLI and unused dependencies".
+  All three remain present on `main`, which is unaffected.
+- **Moved to an optional dependency group**: `jupyterlab` is not an
+  importable library dependency of any frozen module or the active
+  package — it is the environment needed to open/run any notebook
+  (protected or historical). It was moved from core `dependencies` to the
+  `analysis` dependency group (`uv sync --group analysis`) in the same
+  commit; it was not deleted, since it is still required to interactively
+  open the protected notebooks.
 
 ## Verification
 

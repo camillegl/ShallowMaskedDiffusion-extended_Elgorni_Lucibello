@@ -30,7 +30,7 @@ behavior as fixtures and protecting the final-run MMD notebooks.
 | `diffusion.py` | **kept** (superseded, frozen) | imported by the protected corrected notebook; source of the pinned fixtures |
 | `models.py` | **kept** (superseded, frozen) | imported by `diffusion.py` |
 | `datasets.py` | **kept** (superseded, frozen) | imported by the protected corrected notebook |
-| `train.py` | **kept** (superseded, deprecated in help text) | legacy CLI for reproducing historical runs; `--alpha` help now states the M/N convention and points to `maskeddiffusion-train` |
+| `train.py` | **deleted on `guthlac`** (Phase 3F, see below) | legacy CLI for reproducing historical runs; retired once its historical Julia/notebook consumers were also retired |
 | `experiments-analysis/utils.py`, `run_uturn_experiments.py` | **deleted on `guthlac`** (Phase 3D, see below) | historical (non-protected) notebook consumers were also retired |
 
 No legacy module was deleted at Phase 3A: the protected notebooks'
@@ -178,6 +178,32 @@ yet extracted)
 - No protected artifact (the three `results/*_corrected*.csv` files, the two
   protected notebooks) was touched.
 - Phase 3E exists only on `guthlac`; `main` is unaffected.
+
+## Phase 3F — legacy training CLI and dependency cleanup (isolated on `guthlac`)
+
+- Verified (via `git grep`) that no retained script, notebook, test, or
+  documentation instruction imports or executes `train.py`, once its
+  historical Julia (Phase 3C) and notebook (Phase 3D) consumers were
+  retired. Deleted `train.py` (174 lines, blob `4c59502752cd22f597694265c5fa0ac69a80cb14`,
+  SHA-256 `278f504e85e1fd6576c2836da3f7e85cd191eaef4078159aa6fe9b9a21d3c5c`).
+  `datasets.py`, `diffusion.py`, `models.py` remain frozen and unaffected —
+  they are still required by the protected corrected notebook.
+- `git grep` confirmed `scipy`/`numba` have no remaining importers (their
+  sole prior consumer, the Hopfield/DMFT side study, was already retired)
+  and `tensorboard` has no remaining importer (its sole consumer, `train.py`,
+  was just deleted). Removed all three from `pyproject.toml`; regenerated
+  `uv.lock` via `uv lock` (not hand-edited).
+- Moved `jupyterlab` from core `dependencies` to a new `analysis`
+  `dependency-groups` entry (`uv sync --group analysis`) — it is
+  environment tooling to open notebooks, not an importable dependency of
+  any frozen module, and is still needed to interactively run the two
+  protected notebooks.
+- Verified `uv sync --frozen` (core, no jupyterlab) and
+  `uv sync --frozen --group analysis` (adds jupyterlab) both succeed against
+  the regenerated lock.
+- Phase 3F exists only on `guthlac`; `main` is unaffected and keeps
+  `train.py`, `scipy`, `numba`, `tensorboard`, and core-`dependencies`
+  `jupyterlab`.
 
 ## Dependencies removed
 

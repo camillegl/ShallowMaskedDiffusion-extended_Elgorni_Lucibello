@@ -89,9 +89,13 @@ forward.
   `utils.py`, `run_uturn_experiments.py`): archived and (on `guthlac` only)
   deleted; see `docs/archive/HISTORICAL_NOTEBOOKS_ARCHIVE.md`. The two
   protected notebooks are unaffected.
-- **`train.py`**: deprecated, non-protected legacy CLI, not hash-pinned; its
-  retirement is deferred until its historical consumers (old scripts,
-  superseded notebooks) are also retired (see `docs/FROZEN_LEGACY_RUNTIME.md`).
+- **`train.py`**: deprecated, non-protected legacy CLI, not hash-pinned;
+  deleted on `guthlac` once its historical consumers (old Julia scripts,
+  superseded notebooks) were also retired (see
+  `docs/FROZEN_LEGACY_RUNTIME.md`, `docs/MIGRATION_REPORT.md`'s Phase 3F
+  section). `scipy`, `numba`, `tensorboard` removed from `pyproject.toml`/
+  `uv.lock` as no-longer-imported; `jupyterlab` moved to the optional
+  `analysis` dependency group.
 - **`paper/bibliography.bib`**: reconciled against `notes/bibliography.bib`
   and deleted (on `guthlac` only) — every key it contained was already
   present in `notes/bibliography.bib`, so no merge was needed. See
