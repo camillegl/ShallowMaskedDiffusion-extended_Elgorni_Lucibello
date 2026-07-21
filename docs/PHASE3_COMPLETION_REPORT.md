@@ -183,13 +183,34 @@ modified.
 
 ## `main..guthlac` diff stat
 
-76 files changed, 1090 insertions(+), 48902 deletions(-) (as of commit
-`1d98ace`; this document's own commit adds a small further delta).
+82 files changed, 1404 insertions(+), 48906 deletions(-) (as of commit
+`76e9fe5`, including this document's own commit `d123427` and the
+subsequent CI-tolerance fix commit `76e9fe5` described below).
+
+## Post-finalization addendum: CI-exposed cross-platform test tolerance
+
+Opening the pull request to `main` (https://github.com/camillegl/ShallowMaskedDiffusion-extended_Elgorni_Lucibello/pull/2)
+triggered this repository's CI workflow for the first time ever. It failed
+on `tests/regression/test_mmd_notebook_equivalence.py::test_matches_independent_notebook_fixture`
+by ~4e-8 on the Linux runner — a pre-existing test, untouched by any commit
+in this report, that had only ever run locally on macOS before. Root-caused
+to float32 CPU reduction-order differences between macOS (arm64) and Linux
+(x86_64), not a correctness regression: the fixture's `expected` values were
+reproduced byte-for-byte by rerunning the independent, hash-verifying
+`generate_fixture.py` script, and only the tolerance (`rel=1e-6, abs=1e-9`
+→ `rel=5e-6, abs=1e-7`) was widened, with the rationale documented in
+`docs/MMD_NOTEBOOK_PROVENANCE.md` and logged as
+`docs/UPSTREAM_DISCREPANCIES.md` D15. Committed separately as `76e9fe5`
+("test: make MMD equivalence tolerance cross-platform"). Both CI runs on
+the PR now pass (128/128 tests). No protected artifact, notebook, or
+scientific code was touched by this fix.
 
 ## Final remote verification
 
-Not yet performed — this report is written before the final push. See the
-session's final report for `git push` and remote-verification results.
+`git push origin guthlac` completed (fast-forward, no force) through commit
+`76e9fe5`. `git ls-remote --heads origin guthlac` matches local HEAD;
+`git ls-remote --heads origin main` remains
+`ed42906cffd0b2b5989eb53e46f00ca6cdde4171`, unchanged.
 
 ## Final clean status
 
