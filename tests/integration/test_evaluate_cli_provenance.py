@@ -179,9 +179,8 @@ def test_evaluate_rejects_checkpoint_tampered_outside_semantic_hash(tmp_path):
     the semantic hash doesn't cover would pass the checkpoint_id check, but
     must still be caught by the file-level checkpoint_file_sha256 comparison
     recorded in the sample manifest."""
-    import torch
-
     import pytest
+    import torch
 
     ckpt, samples = _train_and_sample(tmp_path)
 
