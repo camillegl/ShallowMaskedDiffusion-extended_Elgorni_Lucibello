@@ -22,9 +22,10 @@ from typing import Any
 
 import torch
 
-from ..artifacts import RunArtifact
+from ..artifacts import RunArtifact, sha256_file, validate_artifact
 from ..checkpoints import load_checkpoint
 from ..config import load_config
+from ..dimensions import Dimensions
 from ..metrics.correlations import correlation_error, empirical_pair_correlation
 from ..metrics.mmd import (
     model_vs_train,
@@ -34,6 +35,7 @@ from ..metrics.mmd import (
     true_vs_true,
 )
 from ..metrics.overlaps import nearest_training_excess
+from ..randomness import SeedHierarchy
 from ..teacher import HiddenManifoldTeacher
 from ..training import resolve_device
 from . import base_parser
@@ -96,6 +98,11 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     samples_dir = Path(args.samples)
+    artifact_problems = validate_artifact(samples_dir)
+    if artifact_problems:
+        raise ValueError(
+            f"--samples {samples_dir} failed artifact validation: {'; '.join(artifact_problems)}"
+        )
     model_samples, sample_manifest = _load_sample_artifact(samples_dir)
 
     sample_teacher_id = sample_manifest.get("teacher_id")
@@ -122,6 +129,28 @@ def main(argv: list[str] | None = None) -> int:
             "the samples were produced"
         )
 
+    # checkpoint_id is a semantic hash over model_state + model_config +
+    # teacher/step/examples_seen (checkpoints.py); it does not cover every
+    # byte of the checkpoint file (e.g. optimizer_state, generator_states).
+    # Comparing the whole file's sha256, recorded by maskeddiffusion-sample
+    # at the moment it read --checkpoint, catches any change to the file
+    # between sampling and this evaluate invocation, not just the subset of
+    # fields checkpoint_id happens to hash.
+    sample_checkpoint_sha256 = sample_manifest.get("checkpoint_file_sha256")
+    if sample_checkpoint_sha256 is None:
+        raise ValueError(
+            f"--samples {samples_dir} manifest has no checkpoint_file_sha256 — "
+            "regenerate the samples with the current package version"
+        )
+    checkpoint_sha256 = sha256_file(args.checkpoint)
+    if checkpoint_sha256 != sample_checkpoint_sha256:
+        raise ValueError(
+            f"--checkpoint {args.checkpoint} has sha256 {checkpoint_sha256!r}, but "
+            f"--samples {samples_dir} was generated from a checkpoint file with sha256 "
+            f"{sample_checkpoint_sha256!r} — the checkpoint file has changed since the "
+            "samples were produced, even though its checkpoint_id still matches"
+        )
+
     checkpoint_visible_dim = payload["model_config"].get("visible_dim")
     if checkpoint_visible_dim != config.dimensions.visible_dim:
         raise ValueError(
@@ -144,11 +173,27 @@ def main(argv: list[str] | None = None) -> int:
     if not sampler_identity:
         raise ValueError(f"--samples {samples_dir} manifest has no sampler identity recorded")
 
+    # The training set actually used to fit --checkpoint is determined by the
+    # checkpoint's own stored config (train_size, train_data_seed), not by
+    # whatever --config is passed to this evaluate invocation. A --config
+    # with the same visible_dim but a different train_size or seed would
+    # otherwise silently reconstruct the wrong training set and corrupt
+    # Train-True, Model-Train, and nearest-training diagnostics.
+    checkpoint_config = payload.get("config") or {}
+    if "dimensions" not in checkpoint_config or "seeds" not in checkpoint_config:
+        raise ValueError(
+            f"--checkpoint {args.checkpoint} has no config recorded — cannot "
+            "reconstruct the exact training set it was trained on (regenerate "
+            "the checkpoint with the current package version)"
+        )
+    checkpoint_dims = Dimensions.from_dict(checkpoint_config["dimensions"])
+    checkpoint_seeds = SeedHierarchy.from_dict(checkpoint_config["seeds"])
+
     seeds = config.seeds
     true_a = teacher.sample_batch(args.n_true, seeds.generator("evaluation_data_seed"))
     true_b = teacher.sample_batch(args.n_true, seeds.generator("metric_seed"))
     train_set = teacher.sample_batch(
-        config.dimensions.train_size, seeds.generator("train_data_seed")
+        checkpoint_dims.train_size, checkpoint_seeds.generator("train_data_seed")
     )
 
     def summarize(res) -> dict:
@@ -196,6 +241,7 @@ def main(argv: list[str] | None = None) -> int:
         input_paths=[args.checkpoint, args.teacher, str(samples_dir)],
         extra={
             "checkpoint_id": checkpoint_id,
+            "checkpoint_file_sha256": checkpoint_sha256,
             # This CLI never moves the teacher/sample/model tensors onto a
             # non-cpu device — every op here is plain-tensor MMD/correlation
             # math on whatever device the inputs were saved on (always cpu

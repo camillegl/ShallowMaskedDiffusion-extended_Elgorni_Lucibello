@@ -12,7 +12,7 @@ from pathlib import Path
 
 import torch
 
-from ..artifacts import RunArtifact
+from ..artifacts import RunArtifact, sha256_file
 from ..checkpoints import load_checkpoint
 from ..config import load_config
 from ..models import LinearMaskedScore, LinearScoreConfig
@@ -89,8 +89,16 @@ def main(argv: list[str] | None = None) -> int:
             # Lets a downstream evaluate run verify it is scoring samples
             # produced from *this exact* checkpoint content, not merely one
             # at the same path (docs/RESEARCH_SPEC.md provenance discipline).
+            # checkpoint_id is a semantic hash (weights + model_config +
+            # teacher/step/examples_seen, see checkpoints.py); recording the
+            # raw file's own sha256 alongside it additionally lets evaluate
+            # detect *any* byte-level change to the checkpoint file — including
+            # ones the semantic hash does not cover (e.g. optimizer_state,
+            # generator_states, package_version, git metadata) — without
+            # having to know in advance which field was touched.
             "checkpoint_id": payload.get("checkpoint_id"),
             "checkpoint_path": str(args.checkpoint),
+            "checkpoint_file_sha256": sha256_file(args.checkpoint),
         },
     )
     print(f"wrote {args.n_samples} samples to {out}")
