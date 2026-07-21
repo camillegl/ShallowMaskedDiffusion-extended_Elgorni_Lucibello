@@ -3,7 +3,9 @@ sampling -> metrics -> artifact -> reload -> validation. Integration check
 only; nothing here is scientifically interpretable."""
 
 import json
+from pathlib import Path
 
+import pytest
 import torch
 
 from maskeddiffusion.artifacts import validate_artifact
@@ -14,6 +16,31 @@ from maskeddiffusion.cli.train import main as train_main
 from maskeddiffusion.teacher import HiddenManifoldTeacher
 
 CONFIG = "configs/smoke/smoke.toml"
+
+
+def _run_train_and_sample(tmp_path, name, config=CONFIG):
+    run = tmp_path / f"{name}-run"
+    samples_dir = tmp_path / f"{name}-samples"
+    assert train_main(["--config", config, "--output", str(run), "--device", "cpu"]) == 0
+    ckpt = run / "checkpoints" / "final.pt"
+    assert (
+        sample_main(
+            [
+                "--config",
+                config,
+                "--output",
+                str(samples_dir),
+                "--checkpoint",
+                str(ckpt),
+                "--n-samples",
+                "4",
+                "--device",
+                "cpu",
+            ]
+        )
+        == 0
+    )
+    return run, ckpt, samples_dir
 
 
 def test_full_smoke_flow(tmp_path):
@@ -67,7 +94,7 @@ def test_full_smoke_flow(tmp_path):
                 "--teacher",
                 str(run / "teacher.pt"),
                 "--samples",
-                str(samples_dir / "samples" / "samples.pt"),
+                str(samples_dir),
                 "--n-true",
                 "50",
                 "--device",
@@ -77,8 +104,12 @@ def test_full_smoke_flow(tmp_path):
         == 0
     )
     summary = json.loads((eval_dir / "summary.json").read_text())
-    for comparison in ("model_vs_true", "true_vs_true", "train_vs_true"):
+    for comparison in ("model_vs_true", "true_vs_true", "train_vs_true", "model_vs_train"):
         assert "mixture_biased_mmd2" in summary[comparison]
+    manifest = json.loads((eval_dir / "manifest.json").read_text())
+    assert manifest["checkpoint_id"] == payload["checkpoint_id"]
+    assert manifest["requested_device"] == "cpu"
+    assert manifest["actual_device"] == "cpu"
 
 
 def test_dry_run_writes_nothing(tmp_path, capsys):
@@ -90,3 +121,63 @@ def test_dry_run_writes_nothing(tmp_path, capsys):
     plan = json.loads(capsys.readouterr().out)
     assert plan["resolved_dimensions"]["visible_dim"] == 32
     assert plan["resolved_dimensions"]["train_size"] == 48
+
+
+def test_evaluate_rejects_bare_tensor_path_for_samples(tmp_path):
+    """--samples must be a sample-run artifact directory, not the raw
+    samples.pt file — the CLI needs the directory's manifest.json to verify
+    provenance (teacher_id, checkpoint_id, sampler identity)."""
+    _run, ckpt, samples_dir = _run_train_and_sample(tmp_path, "a")
+    teacher_path = tmp_path / "a-run" / "teacher.pt"
+    with pytest.raises(ValueError, match="manifest.json"):
+        evaluate_main(
+            [
+                "--config",
+                CONFIG,
+                "--output",
+                str(tmp_path / "eval"),
+                "--checkpoint",
+                str(ckpt),
+                "--teacher",
+                str(teacher_path),
+                "--samples",
+                str(samples_dir / "samples" / "samples.pt"),  # bare tensor, not a dir
+                "--device",
+                "cpu",
+            ]
+        )
+
+
+def test_evaluate_rejects_samples_from_different_teacher(tmp_path):
+    """A --samples artifact generated under a different teacher (here, a
+    different base_seed) must be rejected, not silently scored against the
+    wrong finite-F law."""
+    _run_a, ckpt_a, samples_a = _run_train_and_sample(tmp_path, "a")
+
+    alt_config_path = tmp_path / "alt.toml"
+    alt_config_path.write_text(_smoke_toml_with_seed(99999))
+    _run_b, ckpt_b, _samples_b = _run_train_and_sample(tmp_path, "b", str(alt_config_path))
+
+    with pytest.raises(ValueError, match="teacher_id"):
+        evaluate_main(
+            [
+                "--config",
+                str(alt_config_path),
+                "--output",
+                str(tmp_path / "eval-mismatch"),
+                "--checkpoint",
+                str(ckpt_b),
+                "--teacher",
+                str(_run_b / "teacher.pt"),
+                "--samples",
+                str(samples_a),  # samples from run "a"'s teacher, not run "b"'s
+                "--device",
+                "cpu",
+            ]
+        )
+
+
+def _smoke_toml_with_seed(base_seed: int) -> str:
+    text = Path(CONFIG).read_text().replace("base_seed = 12345", f"base_seed = {base_seed}")
+    assert f"base_seed = {base_seed}" in text, "smoke.toml's base_seed line format changed"
+    return text

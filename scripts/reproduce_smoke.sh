@@ -13,7 +13,7 @@ uv run maskeddiffusion-sample --config configs/smoke/smoke.toml --output "$OUT-s
     --checkpoint "$OUT/checkpoints/final.pt" --n-samples 8 --device cpu
 uv run maskeddiffusion-evaluate --config configs/smoke/smoke.toml --output "$OUT-eval" \
     --checkpoint "$OUT/checkpoints/final.pt" --teacher "$OUT/teacher.pt" \
-    --samples "$OUT-samples/samples/samples.pt" --device cpu
+    --samples "$OUT-samples" --device cpu
 uv run maskeddiffusion-validate-artifact "$OUT"
 uv run maskeddiffusion-validate-artifact "$OUT-samples"
 echo "smoke OK"

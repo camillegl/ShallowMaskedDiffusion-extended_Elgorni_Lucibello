@@ -85,6 +85,13 @@ def main(argv: list[str] | None = None) -> int:
         objective={"name": "n/a (sampling run)"},
         model=payload["model_config"],
         input_paths=[str(args.checkpoint)],
+        extra={
+            # Lets a downstream evaluate run verify it is scoring samples
+            # produced from *this exact* checkpoint content, not merely one
+            # at the same path (docs/RESEARCH_SPEC.md provenance discipline).
+            "checkpoint_id": payload.get("checkpoint_id"),
+            "checkpoint_path": str(args.checkpoint),
+        },
     )
     print(f"wrote {args.n_samples} samples to {out}")
     return 0

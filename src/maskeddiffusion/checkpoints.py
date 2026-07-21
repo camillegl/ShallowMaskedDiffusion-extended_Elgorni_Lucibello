@@ -18,6 +18,7 @@ config, not reproduced from their original RNG draws.
 
 from __future__ import annotations
 
+import hashlib
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -55,6 +56,26 @@ def git_metadata(repo_root: Path | None = None) -> dict[str, Any]:
         return {"git_sha": None, "git_dirty": None}
 
 
+def checkpoint_identity(
+    model_state: dict[str, Any], teacher_id: str, step: int, examples_seen: int
+) -> str:
+    """Stable content hash of a checkpoint: model parameter bytes + the
+    teacher/step/examples_seen it was trained under. Two checkpoints with
+    this same identity have identical weights under an identical teacher at
+    an identical point in training (mirrors `HiddenManifoldTeacher.teacher_id`'s
+    design in teacher.py). Used to let downstream artifacts (e.g. a sample
+    run's manifest) verify they were produced from *this exact* checkpoint,
+    not merely one with the same file path."""
+    h = hashlib.sha256()
+    for key in sorted(model_state):
+        tensor = model_state[key]
+        h.update(key.encode())
+        h.update(tensor.detach().cpu().contiguous().numpy().tobytes())
+    h.update(teacher_id.encode())
+    h.update(f"{step}:{examples_seen}".encode())
+    return "ckpt-" + h.hexdigest()[:16]
+
+
 def save_checkpoint(
     path: str | Path,
     *,
@@ -66,15 +87,17 @@ def save_checkpoint(
     teacher_id: str,
     generator_states: dict[str, torch.Tensor],
 ) -> None:
+    model_state = model.state_dict()
     payload = {
         "format": "maskeddiffusion.checkpoint.v1",
-        "model_state": model.state_dict(),
+        "model_state": model_state,
         "model_config": model.config.identity(),
         "optimizer_state": optimizer.state_dict(),
         "step": step,
         "examples_seen": examples_seen,
         "config": config_dict,
         "teacher_id": teacher_id,
+        "checkpoint_id": checkpoint_identity(model_state, teacher_id, step, examples_seen),
         "generator_states": generator_states,
         "package_version": __version__,
         **git_metadata(),
