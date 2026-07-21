@@ -104,26 +104,38 @@ yet extracted)
     files, and four `notes/plots/hopfield_*.png` figures; added
     `docs/archive/HOPFIELD_DMFT_RETIREMENT.md` recording exactly what was
     removed and how to recover it.
-- **Incomplete retirement, noted for a follow-up commit (not performed by this
-  reconciliation pass):** the retirement commit left several related tracked
-  files behind on `guthlac` — two stale-parameter data files
+- **Incomplete retirement — closed by follow-up commit.** The retirement
+  commit above left several related tracked files behind on `guthlac` — two
+  stale-parameter data files
   (`data/hopfield_T0_mcmc_N10000_S10_seed0.npz`,
   `data/hopfield_T001_mcmc_N10000_S10_seed0.npz`), six figures
   (`notes/plots/hopfield_T001_m_vs_t_mcmc_{pattern,random}.png`,
   `notes/plots/hopfield_T0_m_vs_t_mcmc_{pattern,random}.png`,
   `notes/plots/hopfield_T0_sweeps_mcmc_{pattern,random}.png` — two of the
   first pair were actually referenced by the now-deleted
-  `notes/notes_hopfield.typ`, so they are now orphaned), and the two compiled
+  `notes/notes_hopfield.typ`, so they were orphaned), and the two compiled
   PDFs (`notes/notes_hopfield.pdf`, `notes/notes_dmft_masked_hopfield.pdf`)
-  rendered from the deleted `.typ` sources. These are pre-existing tracked
-  files, not something this reconciliation pass introduces or is authorized
-  to delete; they are recorded here as a scope gap for the next Hopfield/DMFT
-  follow-up commit.
+  rendered from the deleted `.typ` sources. These ten paths were deleted by
+  the follow-up commit "chore: complete Hopfield and DMFT retirement"; full
+  inventory (size, blob, SHA-256, producer) in
+  `docs/archive/HOPFIELD_DMFT_ARCHIVE.md`, removal record in
+  `docs/archive/HOPFIELD_DMFT_RETIREMENT.md`.
 - Phase 3B exists **only** on `guthlac`; `main` is unaffected and remains at
   Phase 3A (`ed42906cffd0b2b5989eb53e46f00ca6cdde4171`).
-- This phase performed no Julia, notebook, result, legacy-CLI, dependency, or
-  CI retirement — those remain separate, unreviewed future steps per
+- This phase (plus its Hopfield/DMFT follow-up) performed no Julia, notebook,
+  result, legacy-CLI, dependency, or CI retirement — those remain separate
+  steps, addressed later in this same Phase 3 effort per
   `docs/PHASE3_BRANCH_REPORT.md`.
+
+## Phase 3C — obsolete Julia implementations (isolated on `guthlac`)
+
+- Commit "chore: retire obsolete Julia implementations": deleted all tracked
+  files under `julia-code/SP/` (saddle-point/ODE theory for the uniform-data
+  model, 14 files) and `julia-code/old/` (older Lux-based training
+  implementation, 3 files). `julia-code/hiddenmanifold/` is unaffected.
+- Full per-file inventory (size, blob, SHA-256, scientific/engineering role)
+  recorded in `docs/archive/JULIA_LEGACY_ARCHIVE.md` before deletion.
+- Phase 3C exists only on `guthlac`; `main` is unaffected.
 
 ## Dependencies removed
 

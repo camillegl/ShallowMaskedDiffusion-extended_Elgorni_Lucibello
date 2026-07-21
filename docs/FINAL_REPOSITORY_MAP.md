@@ -75,15 +75,14 @@ forward.
 ## What this map does not cover / pending retirement categories
 
 - **Hopfield/DMFT sources, notes, data, and figures**: archived and (on
-  `guthlac` only) deleted; see `docs/archive/HOPFIELD_DMFT_ARCHIVE.md` and
+  `guthlac` only) fully deleted, including the initially-missed residual
+  files; see `docs/archive/HOPFIELD_DMFT_ARCHIVE.md` and
   `docs/archive/HOPFIELD_DMFT_RETIREMENT.md`. Merging this retirement into
   `main` requires a distinct, separately reviewed change — it is not decided
-  here. Note the retirement on `guthlac` is itself incomplete: several
-  related tracked files (two stale-parameter `.npz` files, six MCMC figures,
-  two compiled PDFs) were left behind; see `docs/MIGRATION_REPORT.md`'s
-  Phase 3B section and `docs/LEGACY_SCIENTIFIC_INDEX.md`.
-- **`julia-code/SP/` and `julia-code/old/`**: pending exact inventory and
-  archival in a future phase; not superseded by `julia-code/hiddenmanifold/`.
+  here.
+- **`julia-code/SP/` and `julia-code/old/`**: archived and (on `guthlac`
+  only) deleted; see `docs/archive/JULIA_LEGACY_ARCHIVE.md`. Not superseded
+  by `julia-code/hiddenmanifold/`, which is retained and unaffected.
 - **Historical, non-protected notebooks and utilities** (e.g. `analysis.ipynb`,
   `analysis-J.ipynb`, `analysis-mnist.ipynb`, `analysis-uturn.ipynb`,
   `analysis_loss_convergence.ipynb`, `analysis_mmd_distribution_distance.ipynb`):

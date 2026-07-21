@@ -49,46 +49,52 @@ history.
   `git show ed42906cffd0b2b5989eb53e46f00ca6cdde4171:<path>`, or
   `git checkout ed42906cffd0b2b5989eb53e46f00ca6cdde4171 -- <path>` to restore
   a working copy on `guthlac` if ever needed.
-- **Known incomplete-retirement gap** (not fixed by this reconciliation pass):
-  the retirement commit did not remove two stale-parameter data files
+- **Residual retirement gap: closed.** The initial retirement commit did not
+  remove two stale-parameter data files
   (`data/hopfield_T0_mcmc_N10000_S10_seed0.npz`,
   `data/hopfield_T001_mcmc_N10000_S10_seed0.npz`), six figures under
-  `notes/plots/hopfield_*mcmc*.png` (two of which were referenced by the
-  now-deleted `notes/notes_hopfield.typ` and are now orphaned), or the two
-  compiled PDFs (`notes/notes_hopfield.pdf`,
-  `notes/notes_dmft_masked_hopfield.pdf`) rendered from the deleted `.typ`
-  sources — all still tracked on `guthlac`. See `docs/MIGRATION_REPORT.md`'s
-  Phase 3B section for the full list; resolving this is left to a follow-up
-  commit, not performed here.
+  `notes/plots/hopfield_*mcmc*.png`, or the two compiled PDFs
+  (`notes/notes_hopfield.pdf`, `notes/notes_dmft_masked_hopfield.pdf`). These
+  ten paths were removed in the follow-up commit "chore: complete Hopfield
+  and DMFT retirement" on `guthlac`; full inventory in
+  `docs/archive/HOPFIELD_DMFT_ARCHIVE.md`, removal record in
+  `docs/archive/HOPFIELD_DMFT_RETIREMENT.md`.
 
-## `julia-code/SP/`
+## `julia-code/SP/` (retired)
+
+**Status: deleted from the `guthlac` branch** (commit "chore: retire obsolete
+Julia implementations"). **Only on `guthlac` — `main` is unaffected.**
 
 - **Purpose**: Julia "SP" (saddle-point) implementation —
   `MaskedDiffusion_SP.jl`, `ODE.jl`, `helpers.jl`, `common.jl`, `methods.jl`,
   plus its own `Project.toml`/`Manifest.toml`, scripts, data, and notebooks.
-- **Unique scientific content**: treated as scoped to the uniform-data /
-  original masked-diffusion saddle-point theory; not traced against
-  `notes/notes_memorization.typ` line-by-line in this index, so its exact
-  overlap with the retained theory is not fully established here.
-- **Planned retirement phase**: a future "Julia retirement" phase (not Phase
-  3A).
+- **Unique scientific content**: scoped to the uniform-data / original
+  masked-diffusion saddle-point theory and its retrieval-overlap ODE; full
+  per-file inventory (size, blob, SHA-256, role) in
+  `docs/archive/JULIA_LEGACY_ARCHIVE.md`.
 - **Replacement / retained source**: `julia-code/hiddenmanifold/` is the
-  retained, relevant theory code for the hidden-manifold extension (see
-  below); `julia-code/SP/` is not superseded by it and its disposition is
-  deferred to that later phase.
-- **Recovery**: `git show phase2-hidden-manifold-foundation:julia-code/SP/<file>`.
+  retained, relevant theory code for the hidden-manifold extension;
+  `julia-code/SP/` targeted a different data model and observable, so it is
+  not superseded by it, only retired as out-of-scope legacy material.
+- **Recovery**: `git show phase2-hidden-manifold-foundation:julia-code/SP/<file>`
+  or `git show ed42906cffd0b2b5989eb53e46f00ca6cdde4171:julia-code/SP/<file>`.
 
-## `julia-code/old/`
+## `julia-code/old/` (retired)
 
-- **Purpose**: Older Julia implementation —
-  `lux_train_uniform_data.jl`, own `Project.toml`/`Manifest.toml`.
-- **Unique scientific content**: presumed superseded (directory name "old"),
-  not independently verified in this index.
-- **Planned retirement phase**: a future "Julia retirement" phase (not Phase
-  3A).
-- **Replacement / retained source**: superseded by later Julia and/or Python
-  code; exact successor not traced here.
-- **Recovery**: `git show phase2-hidden-manifold-foundation:julia-code/old/<file>`.
+**Status: deleted from the `guthlac` branch** (commit "chore: retire obsolete
+Julia implementations"). **Only on `guthlac` — `main` is unaffected.**
+
+- **Purpose**: Older Lux.jl/Zygote-based neural-network training
+  implementation on uniform data — `lux_train_uniform_data.jl`, own
+  `Project.toml`/`Manifest.toml`.
+- **Unique scientific content**: treated as superseded (directory name
+  "old", distinct/older toolchain from `julia-code/SP/`); no formal
+  cross-check against a specific successor is recorded — see
+  `docs/archive/JULIA_LEGACY_ARCHIVE.md` for the documented uncertainty.
+- **Replacement / retained source**: superseded by later Julia work and
+  ultimately by the active Python package `src/maskeddiffusion/`.
+- **Recovery**: `git show phase2-hidden-manifold-foundation:julia-code/old/<file>`
+  or `git show ed42906cffd0b2b5989eb53e46f00ca6cdde4171:julia-code/old/<file>`.
 
 ## Historical analysis notebooks
 
