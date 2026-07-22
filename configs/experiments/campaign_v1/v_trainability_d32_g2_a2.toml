@@ -1,0 +1,42 @@
+# Phase 4C campaign_v1 — V trainability, D=32, gamma=2, alpha=2
+# 3 disorder repeats; paired arms share the full seed hierarchy
+# (docs/PHASE4C_EXPERIMENT_PROTOCOL.md). Training settings are placeholders
+# pending timing calibration (protocol §6); nothing here has been executed.
+n_generate = 1000
+
+[experiment]
+experiment_id = "p4c-vtrain-d32-g2-a2"
+repeats = 3
+base_seed = 213000
+
+[intervention]
+name = "v_trainability"
+
+[dimensions]
+latent_dim = 32
+aspect_ratio = 2.0
+sample_ratio = 2.0
+
+[model]
+normalization = "explicit_sqrt_n"
+bias_policy = "none"
+diagonal_policy = "zero"
+# v_policy comes from the intervention arms.
+
+
+[training]
+batch_size = 64
+learning_rate = 1e-2
+l2reg = 0.0
+validation_size = 200
+validation_every = 100
+log_every = 50
+max_steps = 2000
+
+[sampler]
+sampler_name = "sequential_random_stochastic"
+tokens_per_step = 1
+
+[evaluation]
+n_true = 1000
+lambdas = [4.0, 8.0]

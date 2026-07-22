@@ -1,0 +1,46 @@
+# Phase 4C campaign_v1 — optimization budget (short=500 vs long=5000), D=32, gamma=2, alpha=0.5
+# 3 disorder repeats; paired arms share the full seed hierarchy
+# (docs/PHASE4C_EXPERIMENT_PROTOCOL.md). Training settings are placeholders
+# pending timing calibration (protocol §6); nothing here has been executed.
+n_generate = 1000
+
+[experiment]
+experiment_id = "p4c-optbudget-d32-g2-a0p5"
+repeats = 3
+base_seed = 219000
+
+[intervention]
+name = "optimization_budget"
+
+[intervention.budgets]
+short = 500
+long = 5000
+
+[dimensions]
+latent_dim = 32
+aspect_ratio = 2.0
+sample_ratio = 0.5
+
+[model]
+normalization = "explicit_sqrt_n"
+bias_policy = "none"
+diagonal_policy = "zero"
+v_policy = "frozen_zero"
+
+
+[training]
+batch_size = 64
+learning_rate = 1e-2
+l2reg = 0.0
+validation_size = 200
+validation_every = 100
+log_every = 50
+# max_steps comes from the intervention budgets.
+
+[sampler]
+sampler_name = "sequential_random_stochastic"
+tokens_per_step = 1
+
+[evaluation]
+n_true = 1000
+lambdas = [4.0, 8.0]

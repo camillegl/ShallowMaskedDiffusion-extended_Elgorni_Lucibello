@@ -263,3 +263,143 @@ hatchling with `src/` layout and console-script entry points.
   trainable-V ablation), D11 (joint-law consistency), D12 documentation
   status unchanged. D1 remains open-by-design in the legacy CLI (never
   reinterpreted; active CLI rejects bare `alpha`).
+
+## Phase 4A/4B — experimental-design audit and provenance hardening (isolated on `guthlac`)
+
+- Phase 4A: read-only audit confirming the teacher/seed/dimension invariants
+  hold in the active package at smoke scale; identified gaps (Model-vs-Train
+  not wired into evaluation, no U-turn implementation, no automated
+  convergence criterion) — no code changed.
+- Phase 4B: strict scientific config validation; device-aware RNG for
+  samplers/validation; evaluation provenance hardening (sample-artifact
+  validation, checkpoint-recorded training config reconstruction, semantic
+  checkpoint identity plus raw file SHA-256, Model-vs-Train wired in);
+  continuous-time objective correctness (exact `t=0`); sampler provenance
+  (`tokens_per_step`/temperature rejection); CI and artifact hardening
+  (exact protected-path assertion, committed-diff whitespace check).
+- Test count: 128 → 200 (docs/PHASE4A_DESIGN_AUDIT.md, PR #3).
+
+## Phase 4C — paired-experiment engine, canonical run-record schema, analysis pipeline (isolated on `guthlac`)
+
+Built across several sessions; delivered as one working tree, not yet
+committed at the time of this report. Test count: 200 → 243 (U-turn
+subsystem) → 365 (engine, schema, analysis, and their polish pass below).
+
+- **U-turn / reconstruction subsystem** (`src/maskeddiffusion/uturn.py`,
+  `cli/uturn.py`): partial masking at controlled `t`, paired mask/order/token
+  seeds across train/fresh sources, `q_U(t)` retrieval overlap against the
+  `1-t` no-recovery baseline, train-minus-fresh memorization-sensitive
+  comparison emitted only when both sources are run.
+- **Canonical run-record schema** (`src/maskeddiffusion/experiments/schema.py`,
+  package name deliberately plural, distinct from the singular
+  `experiment/` engine package): `Phase4CRunRecord`
+  (`maskeddiffusion.p4c_run_record.v1`) — the single artifact-level contract
+  between the engine and the analysis layer; validated on construction and
+  on every load, tamper-detects a mismatched `model_config_digest`.
+- **Paired-experiment engine** (`src/maskeddiffusion/experiments/`,
+  `cli/experiment.py`, entry point `maskeddiffusion-experiment`): TOML → one
+  `ExperimentSpec` per (repeat, condition); four registered interventions
+  (`v_trainability`, `sampler_stochasticity`, `optimization_budget`,
+  `finite_d`); strict paired-disorder validation (`experiments.pairs`) with a
+  `finite_d` exemption for content-identical disorder (seed-value-matched
+  only, by construction); byte-stable resumable execution
+  (train → sample → evaluate → optional uturn, each an ADR-003 artifact);
+  `run_record.json` written last and re-validated (not re-executed) on
+  resume.
+- **Analysis pipeline** (`src/maskeddiffusion/analysis/`,
+  `cli/analyze.py`, entry point `maskeddiffusion-p4c-analyze`): tidy-row
+  contract and structural validation (`analysis.rows`, spec §9's eight
+  rejection rules), the `run_record.json → AnalysisRow` parser
+  (`analysis.ingest`, the only artifact-reading code in the layer),
+  statistics (mean/sample-std/median, no bootstrap, no significance tests),
+  report/figure/provenance writers, and a wording guard now covering both
+  every generated figure's text and every string value in the report JSON
+  recursively (`analysis.report.check_report_wording`) — not a field
+  denylist, so a new report field cannot silently bypass it.
+- **Supporting refactors**: `cli/evaluate.py` extracted a reusable
+  `evaluate_run(...)` so the engine's evaluate stage inherits the CLI's full
+  checkpoint/teacher/sample provenance verification rather than duplicating
+  it; `training.py` added `optimizer_identity(...)` for spec/manifest
+  identities.
+- **Campaign configs** (`configs/experiments/`): `smoke_d8/` (D=8 CPU
+  integration checks, one per intervention plus a U-turn-enabled variant,
+  never scientifically interpretable) and `campaign_v1/` (93 planned runs
+  across all four interventions at a D=32 aspect-ratio-2 sample-ratio sweep
+  plus a finite-D sweep; configs only, dry-run validated — the campaign has
+  **not** been executed).
+- **Docs**: `docs/PHASE4C_EXPERIMENT_PROTOCOL.md` (engine contract:
+  intervention registry, optional U-turn stage and its reduced-summary
+  design decision, run layout/resume discipline, canonical run record,
+  execution, campaign configs, claim discipline) and
+  `docs/PHASE4C_ANALYSIS_SPEC.md` (analysis contract: tidy-table schemas,
+  validation rules, statistics policy, output formats, provenance manifest;
+  status upgraded from "partial, schema-dependent parts deferred" to
+  "active" once the schema landed).
+- No scientific claim, equation, or notation changed;
+  `docs/ORIGINAL_ARCHITECTURE.md` and `docs/EQUATION_TO_CODE_MAP.md` are
+  unaffected and were cross-checked as part of this phase's completion
+  requirements. `julia-code/SP/data/`/`plots/` — pre-existing, always
+  gitignored local scratch output uncovered when the Phase 3 retirement
+  deleted its own `.gitignore` — was re-ignored (root `.gitignore`) with a
+  provenance note in `docs/archive/JULIA_LEGACY_ARCHIVE.md`; no file under
+  those two paths was touched.
+
+### Phase 4C closure/reconciliation pass (same branch, before first commit)
+
+A structural reconciliation pass across the above, requested before any
+Phase 4C code was committed. Test count: 365 → 490.
+
+- **Package unification**: the singular `src/maskeddiffusion/experiment/`
+  and plural `src/maskeddiffusion/experiments/` (schema-only) packages were
+  merged into one `experiments/` package — engine (`spec`, `interventions`,
+  `pairs`, `plan`, `runner`, `uturn_stage`) plus `schema` as siblings. All
+  imports, entry points, tests (renamed `test_experiment_*` →
+  `test_experiments_*`), and docs updated; a closure test
+  (`tests/property/test_phase4c_closure.py`) asserts the singular package
+  can never reappear and no file imports it.
+- **`comparison_type` replaces the `strict_disorder` boolean**
+  (`experiments.interventions.Intervention.comparison_type`,
+  `"paired_disorder"` vs `"matched_seed_finite_size"`): `finite_d`'s
+  different-`latent_dim` arms are a different-shape, distinct-`teacher_id`
+  teacher by construction, never a same-disorder pairing. The engine's pair
+  manifest, `analysis.rows`'s pairing validation (a new
+  `finite_size_teacher_collision` rule requires distinct `teacher_id`, not
+  merely tolerating it), and `analysis.statistics` (which now excludes
+  `matched_seed_finite_size` rows from `paired_differences` by default and
+  routes them to a new, explicitly labeled
+  `p4c_matched_seed_finite_size.csv` / `matched_seed_finite_size_frame`)
+  all key off this one field. A real correctness bug this surfaced and
+  fixed in passing: `finite_d`'s legitimate `model_config_digest` variation
+  (from `visible_dim` differing by construction) was not registered in
+  `analysis.rows.INTERVENTION_VARYING_FIELDS`, so every real `finite_d`
+  run's rows were being rejected as `identity_mismatch`.
+- **Complete run provenance**: `Phase4CRunRecord` gained `status`,
+  `resolved_config` + `resolved_config_sha256` (the canonical, reconstructible
+  resolved config, not just a science digest), `artifacts` (a
+  `{stage: {manifest_path, manifest_sha256}}` link for train/samples/eval
+  and optional uturn), and `git_commit`. Hashes are now re-verified, not
+  just stored: `load_run_record`'s new `verify_artifact_hashes` recomputes
+  every linked file's SHA-256 by default and raises on any mismatch or
+  missing file.
+- **Explicit resume migration, true immutability**: a completed run's
+  `run_record.json`, once written, is only ever re-validated on resume,
+  never rebuilt or rewritten (removing a latent bug where the prior
+  "rebuild and compare" resume logic would have broken on any
+  non-deterministic field). A record missing entirely (pre-dates the
+  schema, or was lost) is built exactly once with an explicit `migration`
+  block (`experiments.schema.backfill_migration_block`), never silently.
+- **Pilot config**: `configs/experiments/pilot/` — one small, actually-executed
+  calibration run (not `campaign_v1`) at the central design cell, with
+  timing/storage results in `docs/PHASE4C_PILOT_REPORT.md`. `campaign_v1`
+  remains an unexecuted plan.
+- **Closure tests**: `tests/property/test_phase4c_closure.py` plus
+  additions to the schema/ingest/runner test suites cover: no import of the
+  old singular package; the schema round-trip through
+  engine → record → analysis; every artifact hash mismatch is rejected
+  (`tests/unit/test_run_record_hash_verification.py`, real files, real
+  tampering); a backfilled record is immutable on the next resume; explicit
+  migration metadata is recorded; `finite_d` is never treated as
+  `paired_disorder`; the U-turn artifact's hash is checked like any other
+  stage's; the wording guard traverses nested report JSON; and analysis
+  rejects missing/mixed pair members.
+- No scientific claim, equation, or notation changed in this pass either.

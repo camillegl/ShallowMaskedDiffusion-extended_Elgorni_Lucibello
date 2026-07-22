@@ -24,7 +24,7 @@ import torch
 
 from ..artifacts import RunArtifact, sha256_file, validate_artifact
 from ..checkpoints import load_checkpoint
-from ..config import load_config
+from ..config import RunConfig, load_config
 from ..dimensions import Dimensions
 from ..metrics.correlations import correlation_error, empirical_pair_correlation
 from ..metrics.mmd import (
@@ -56,48 +56,42 @@ def _load_sample_artifact(samples_dir: Path) -> tuple[torch.Tensor, dict[str, An
     return tensor, manifest
 
 
-def main(argv: list[str] | None = None) -> int:
-    parser = base_parser(__doc__ or "evaluate")
-    parser.add_argument("--checkpoint", required=True)
-    parser.add_argument("--teacher", required=True, help="teacher.pt from the train run")
-    parser.add_argument(
-        "--samples", required=True, help="sample-run artifact directory (not a bare .pt path)"
-    )
-    parser.add_argument("--n-true", type=int, default=1000, help="fresh P_F evaluation samples")
-    parser.add_argument("--lambdas", type=float, nargs="+", default=[4.0, 8.0])
-    args = parser.parse_args(argv)
-    config = load_config(args.config)
-    out = Path(args.output)
+COMPARISONS = ("model_vs_true", "true_vs_true", "train_vs_true", "model_vs_train")
 
-    if args.dry_run:
-        print(
-            json.dumps(
-                {
-                    "comparisons": [
-                        "model_vs_true",
-                        "true_vs_true",
-                        "train_vs_true",
-                        "model_vs_train",
-                    ],
-                    "lambdas": args.lambdas,
-                    "n_true": args.n_true,
-                    "planned_paths": {"summary": str(out / "summary.json")},
-                },
-                indent=2,
-            )
-        )
-        return 0
 
-    requested_device = resolve_device(args.device)
-    payload = load_checkpoint(args.checkpoint)
-    teacher = HiddenManifoldTeacher.load(args.teacher)
-    if teacher.teacher_id != payload["teacher_id"]:
+def evaluate_run(
+    *,
+    config: RunConfig,
+    checkpoint: str | Path,
+    teacher: str | Path,
+    samples_dir: str | Path,
+    out: str | Path,
+    n_true: int,
+    lambdas: list[float],
+    requested_device: str,
+    command: str,
+    extra: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Run the full evaluation pipeline and write the ADR-003 artifact at `out`.
+
+    This is the whole provenance-checked evaluation core of
+    `maskeddiffusion-evaluate`, extracted so the Phase 4C experiment engine
+    (`maskeddiffusion.experiments.runner`) inherits the same verification
+    rather than duplicating it: teacher↔checkpoint↔samples `teacher_id`,
+    `checkpoint_id` and full-file `checkpoint_file_sha256`, visible-dim
+    consistency, sampler identity taken from the samples' own manifest, and
+    the training set reconstructed from the checkpoint's own recorded config.
+    Returns the results dict that is written to `summary.json`.
+    """
+    payload = load_checkpoint(checkpoint)
+    teacher_obj = HiddenManifoldTeacher.load(teacher)
+    if teacher_obj.teacher_id != payload["teacher_id"]:
         raise ValueError(
-            f"--teacher {args.teacher} (teacher_id={teacher.teacher_id}) does not match "
-            f"--checkpoint {args.checkpoint} (teacher_id={payload['teacher_id']})"
+            f"--teacher {teacher} (teacher_id={teacher_obj.teacher_id}) does not match "
+            f"--checkpoint {checkpoint} (teacher_id={payload['teacher_id']})"
         )
 
-    samples_dir = Path(args.samples)
+    samples_dir = Path(samples_dir)
     artifact_problems = validate_artifact(samples_dir)
     if artifact_problems:
         raise ValueError(
@@ -106,11 +100,11 @@ def main(argv: list[str] | None = None) -> int:
     model_samples, sample_manifest = _load_sample_artifact(samples_dir)
 
     sample_teacher_id = sample_manifest.get("teacher_id")
-    if sample_teacher_id != teacher.teacher_id:
+    if sample_teacher_id != teacher_obj.teacher_id:
         raise ValueError(
             f"--samples {samples_dir} was generated under teacher_id "
             f"{sample_teacher_id!r}, but --teacher/--checkpoint resolve to "
-            f"{teacher.teacher_id!r}"
+            f"{teacher_obj.teacher_id!r}"
         )
 
     checkpoint_id = payload.get("checkpoint_id")
@@ -124,7 +118,7 @@ def main(argv: list[str] | None = None) -> int:
     if checkpoint_id != sample_checkpoint_id:
         raise ValueError(
             f"--samples {samples_dir} was generated from checkpoint_id "
-            f"{sample_checkpoint_id!r}, but --checkpoint {args.checkpoint} has "
+            f"{sample_checkpoint_id!r}, but --checkpoint {checkpoint} has "
             f"checkpoint_id {checkpoint_id!r} — the checkpoint file has changed since "
             "the samples were produced"
         )
@@ -142,10 +136,10 @@ def main(argv: list[str] | None = None) -> int:
             f"--samples {samples_dir} manifest has no checkpoint_file_sha256 — "
             "regenerate the samples with the current package version"
         )
-    checkpoint_sha256 = sha256_file(args.checkpoint)
+    checkpoint_sha256 = sha256_file(checkpoint)
     if checkpoint_sha256 != sample_checkpoint_sha256:
         raise ValueError(
-            f"--checkpoint {args.checkpoint} has sha256 {checkpoint_sha256!r}, but "
+            f"--checkpoint {checkpoint} has sha256 {checkpoint_sha256!r}, but "
             f"--samples {samples_dir} was generated from a checkpoint file with sha256 "
             f"{sample_checkpoint_sha256!r} — the checkpoint file has changed since the "
             "samples were produced, even though its checkpoint_id still matches"
@@ -182,7 +176,7 @@ def main(argv: list[str] | None = None) -> int:
     checkpoint_config = payload.get("config") or {}
     if "dimensions" not in checkpoint_config or "seeds" not in checkpoint_config:
         raise ValueError(
-            f"--checkpoint {args.checkpoint} has no config recorded — cannot "
+            f"--checkpoint {checkpoint} has no config recorded — cannot "
             "reconstruct the exact training set it was trained on (regenerate "
             "the checkpoint with the current package version)"
         )
@@ -190,9 +184,9 @@ def main(argv: list[str] | None = None) -> int:
     checkpoint_seeds = SeedHierarchy.from_dict(checkpoint_config["seeds"])
 
     seeds = config.seeds
-    true_a = teacher.sample_batch(args.n_true, seeds.generator("evaluation_data_seed"))
-    true_b = teacher.sample_batch(args.n_true, seeds.generator("metric_seed"))
-    train_set = teacher.sample_batch(
+    true_a = teacher_obj.sample_batch(n_true, seeds.generator("evaluation_data_seed"))
+    true_b = teacher_obj.sample_batch(n_true, seeds.generator("metric_seed"))
+    train_set = teacher_obj.sample_batch(
         checkpoint_dims.train_size, checkpoint_seeds.generator("train_data_seed")
     )
 
@@ -205,8 +199,7 @@ def main(argv: list[str] | None = None) -> int:
             "display_sqrt_clipped_mixture": sqrt_clipped_mmd(res.mixture_biased_mmd2),
         }
 
-    lams = args.lambdas
-    comparisons = ("model_vs_true", "true_vs_true", "train_vs_true", "model_vs_train")
+    lams = lambdas
     results = {
         "model_vs_true": summarize(model_vs_true(model_samples, true_a, lams)),
         "true_vs_true": summarize(true_vs_true(true_a, true_b, lams)),
@@ -214,31 +207,31 @@ def main(argv: list[str] | None = None) -> int:
         "model_vs_train": summarize(model_vs_train(model_samples, train_set, lams)),
         "nearest_training": nearest_training_excess(model_samples, true_a, train_set),
         "pair_correlation_error": correlation_error(
-            empirical_pair_correlation(model_samples), teacher.correlation_matrix()
+            empirical_pair_correlation(model_samples), teacher_obj.correlation_matrix()
         ),
     }
 
     artifact = RunArtifact(out)
-    config.to_json(out / "resolved_config.json")
+    config.to_json(Path(out) / "resolved_config.json")
     artifact.log_metrics(
         {
             "event": "evaluated",
             **{
                 f"{cmp}_mixture_biased_mmd2": results[cmp]["mixture_biased_mmd2"]
-                for cmp in comparisons
+                for cmp in COMPARISONS
             },
         }
     )
     artifact.write_summary(results)
     artifact.write_manifest(
-        command=" ".join(["maskeddiffusion-evaluate", *sys.argv[1:]]),
+        command=command,
         device=requested_device,
-        teacher_id=teacher.teacher_id,
+        teacher_id=teacher_obj.teacher_id,
         seeds=seeds.to_dict(),
         sampler=sampler_identity,
         objective={"name": "n/a (evaluation run)", "mmd_lambdas": lams},
         model=payload["model_config"],
-        input_paths=[args.checkpoint, args.teacher, str(samples_dir)],
+        input_paths=[str(checkpoint), str(teacher), str(samples_dir)],
         extra={
             "checkpoint_id": checkpoint_id,
             "checkpoint_file_sha256": checkpoint_sha256,
@@ -260,9 +253,52 @@ def main(argv: list[str] | None = None) -> int:
             # imply GPU computation that did not happen.
             "requested_device": requested_device,
             "actual_device": "cpu",
+            **(extra or {}),
         },
     )
-    print(json.dumps({k: results[k] for k in comparisons}, indent=2))
+    return results
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = base_parser(__doc__ or "evaluate")
+    parser.add_argument("--checkpoint", required=True)
+    parser.add_argument("--teacher", required=True, help="teacher.pt from the train run")
+    parser.add_argument(
+        "--samples", required=True, help="sample-run artifact directory (not a bare tensor path)"
+    )
+    parser.add_argument("--n-true", type=int, default=1000, help="fresh P_F evaluation samples")
+    parser.add_argument("--lambdas", type=float, nargs="+", default=[4.0, 8.0])
+    args = parser.parse_args(argv)
+    config = load_config(args.config)
+    out = Path(args.output)
+
+    if args.dry_run:
+        print(
+            json.dumps(
+                {
+                    "comparisons": list(COMPARISONS),
+                    "lambdas": args.lambdas,
+                    "n_true": args.n_true,
+                    "planned_paths": {"summary": str(out / "summary.json")},
+                },
+                indent=2,
+            )
+        )
+        return 0
+
+    requested_device = resolve_device(args.device)
+    results = evaluate_run(
+        config=config,
+        checkpoint=args.checkpoint,
+        teacher=args.teacher,
+        samples_dir=args.samples,
+        out=out,
+        n_true=args.n_true,
+        lambdas=args.lambdas,
+        requested_device=requested_device,
+        command=" ".join(["maskeddiffusion-evaluate", *sys.argv[1:]]),
+    )
+    print(json.dumps({k: results[k] for k in COMPARISONS}, indent=2))
     return 0
 
 

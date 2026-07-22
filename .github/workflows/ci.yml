@@ -46,7 +46,10 @@ jobs:
           uv run maskeddiffusion-train --help
           uv run maskeddiffusion-sample --help
           uv run maskeddiffusion-evaluate --help
+          uv run maskeddiffusion-uturn --help
           uv run maskeddiffusion-validate-artifact --help
+          uv run maskeddiffusion-experiment --help
+          uv run maskeddiffusion-p4c-analyze --help
 
       - name: Diff whitespace check
         # `git diff --check` with no range compares the working tree against
@@ -55,7 +58,8 @@ jobs:
         # committed range instead: PR base...HEAD for pull_request events,
         # the pushed commit range for push events (falling back to the
         # single tip commit if `before` is the all-zero SHA, e.g. a branch's
-        # first push).
+        # first push, or if `before` is unreachable, e.g. a force-push that
+        # rewrote history out from under it).
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             git fetch origin "${{ github.base_ref }}" --depth=1
@@ -63,6 +67,9 @@ jobs:
           else
             before="${{ github.event.before }}"
             if [ -z "$before" ] || [ "$before" = "0000000000000000000000000000000000000000" ]; then
+              range="HEAD~1..HEAD"
+            elif ! git cat-file -e "$before^{commit}" 2>/dev/null; then
+              echo "before commit $before is unreachable (force-push rewrote history); falling back to HEAD~1..HEAD"
               range="HEAD~1..HEAD"
             else
               range="$before..${{ github.sha }}"

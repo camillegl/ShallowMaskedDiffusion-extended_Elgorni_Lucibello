@@ -66,18 +66,27 @@ Python-3.11 claim is wrong); where it conflicts with `docs/`, `docs/` wins.
 
 ## Verified commands (ran 2026-07-20, Phase 2; re-verified after the Phase 3 merge to `main`)
 
-- `uv run pytest -q` — full test suite (200 tests as of Phase 4B provenance hardening,
-  PR #3; was 125 at Phase 2, 128 after Phase 3's CI-hardening tests — see
-  `docs/MIGRATION_REPORT.md`).
+- `uv run pytest -q` — full test suite (490 tests as of the Phase 4C closure/
+  reconciliation pass — experiment/ and experiments/ unified into one
+  package, matched_seed_finite_size comparison type, complete run
+  provenance with real artifact-hash re-verification, explicit resume
+  migration metadata, a pilot calibration config, and closure tests; was
+  365 at the prior Phase 4C polish pass, 349 at the initial engine/schema/
+  analysis integration, 243 at Phase 4C U-turn, 200 at Phase 4B provenance
+  hardening PR #3, 125 at Phase 2, 128 after Phase 3's CI-hardening tests —
+  see `docs/MIGRATION_REPORT.md`).
+- `uv run maskeddiffusion-experiment --help` and `uv run maskeddiffusion-p4c-analyze
+  --help` — Phase 4C paired-experiment engine and analysis CLIs
+  (`docs/PHASE4C_EXPERIMENT_PROTOCOL.md`, `docs/PHASE4C_ANALYSIS_SPEC.md`).
 - `scripts/reproduce_smoke.sh` — tiny CPU end-to-end run; integration check only.
 - `scripts/validate_reference_artifacts.sh` — verify protected-artifact hashes.
 - `uv run maskeddiffusion-train --help` (likewise `-sample`, `-evaluate`,
-  `-validate-artifact`).
+  `-uturn`, `-validate-artifact`).
 - `train.py`, the legacy CLI (`--alpha` meaning M/L), was retired (deleted) in Phase 3,
   now merged to `main` — it no longer exists on any current branch; see
   `docs/MIGRATION_REPORT.md`'s Phase 3F section and `docs/archive/JULIA_LEGACY_ARCHIVE.md`.
 - `.github/workflows/ci.yml` (on `main` since the Phase 3 merge) runs the equivalent of the
-  commands above plus the four CLI `--help` checks and a committed-range whitespace check,
+  commands above plus the seven CLI `--help` checks and a committed-range whitespace check,
   on every push/PR to `main` and `guthlac`.
 
 ## Forbidden actions

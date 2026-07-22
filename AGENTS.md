@@ -14,7 +14,7 @@ Quick facts (mirrored from CLAUDE.md, not independently authoritative):
 - Package manager: `uv` only; Python 3.12 (`.python-version`, `uv.lock`
   un-gitignored and kept in version control).
 - Active implementation: `src/maskeddiffusion/` with `maskeddiffusion-train`
-  / `-sample` / `-evaluate` / `-validate-artifact` CLIs; tests via
+  / `-sample` / `-evaluate` / `-uturn` / `-validate-artifact` CLIs; tests via
   `uv run pytest -q`.
 - Legacy flat modules (`train.py`, `diffusion.py`, `models.py`,
   `datasets.py`) are superseded but retained — the protected MMD notebooks

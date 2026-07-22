@@ -1,0 +1,41 @@
+# Tiny D=8 CPU smoke experiment — Phase 4C engine integration check only,
+# not scientifically interpretable (docs/PHASE4C_EXPERIMENT_PROTOCOL.md).
+# Pair: frozen-zero V versus trainable V (open question Q1, docs/RESEARCH_SPEC.md).
+
+n_generate = 4
+
+[experiment]
+experiment_id = "smoke-d8-v-trainability"
+repeats = 1
+base_seed = 20260721
+
+[intervention]
+name = "v_trainability"
+
+[dimensions]
+latent_dim = 8
+aspect_ratio = 2.0    # visible_dim = 16
+sample_ratio = 3.0    # train_size = 24
+
+[model]
+normalization = "explicit_sqrt_n"
+bias_policy = "none"
+diagonal_policy = "zero"
+# v_policy comes from the intervention arms.
+
+[training]
+max_steps = 4
+batch_size = 8
+learning_rate = 1e-2
+l2reg = 0.0
+validation_size = 8
+validation_every = 2
+log_every = 1
+
+[sampler]
+sampler_name = "sequential_random_stochastic"
+tokens_per_step = 1
+
+[evaluation]
+n_true = 8
+lambdas = [4.0, 8.0]

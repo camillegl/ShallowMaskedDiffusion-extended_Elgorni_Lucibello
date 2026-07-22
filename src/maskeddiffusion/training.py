@@ -22,7 +22,7 @@ from typing import Any
 import torch
 
 from .checkpoints import load_checkpoint, restore_into, save_checkpoint
-from .config import RunConfig
+from .config import RunConfig, TrainingConfig
 from .models import LinearMaskedScore
 from .objectives import continuous_time_masked_bce
 from .randomness import SeedHierarchy
@@ -36,6 +36,23 @@ class TrainState:
     step: int
     examples_seen: int
     generators: dict[str, torch.Generator]
+
+
+def optimizer_identity(training: TrainingConfig) -> dict[str, Any]:
+    """Recorded identity of the optimizer `build_state` constructs.
+
+    AdamW with `weight_decay=0.0` — regularization lives in the objective
+    (ADR 001/legacy parity) — and torch-default betas/eps. Experiment specs
+    and manifests record this dict; it must stay in sync with the AdamW
+    construction in `build_state` below.
+    """
+    return {
+        "name": "adamw",
+        "learning_rate": training.learning_rate,
+        "weight_decay": 0.0,
+        "betas": [0.9, 0.999],
+        "eps": 1e-8,
+    }
 
 
 def resolve_device(requested: str) -> str:
